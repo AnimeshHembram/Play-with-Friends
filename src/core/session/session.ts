@@ -22,6 +22,12 @@ import { fail, ok, type Result } from '../lib/result';
  * Sessions are isolated: each one gets its own id and a deep copy of the
  * initial state, so two sessions never share mutable data. There is no
  * cross-device or cross-tab sync, by design.
+ *
+ * Session state must be plain data (objects, arrays, strings, numbers,
+ * booleans, null, Date, Map, Set). It is copied with `structuredClone`, which
+ * cannot copy functions and turns class instances into plain objects.
+ * `updateSessionState` stores whatever the update returns, so return new
+ * objects instead of sharing module-level ones between sessions.
  */
 export type SessionStatus = 'ready' | 'active' | 'paused' | 'ended';
 
@@ -56,7 +62,7 @@ export function createSession<TState>({
     id,
     gameId,
     status: 'ready',
-    state: structuredClone(initialState),
+    state: cloneState(initialState, 'createSession'),
     createdAt: t,
     updatedAt: t,
   };
@@ -101,7 +107,12 @@ export function resetSession<TState>(
   initialState: TState,
   now: () => number = Date.now,
 ): Session<TState> {
-  return { ...session, status: 'ready', state: structuredClone(initialState), updatedAt: now() };
+  return {
+    ...session,
+    status: 'ready',
+    state: cloneState(initialState, 'resetSession'),
+    updatedAt: now(),
+  };
 }
 
 /** Applies a game-defined state update. Rejected once the session has ended. */
@@ -114,4 +125,15 @@ export function updateSessionState<TState>(
     return fail('session-ended', 'This game has ended. Start a new one to keep playing.');
   }
   return ok({ ...session, state: update(session.state), updatedAt: now() });
+}
+
+function cloneState<TState>(state: TState, caller: string): TState {
+  try {
+    return structuredClone(state);
+  } catch (error) {
+    throw new TypeError(
+      `${caller}: initialState must be plain data (no functions or DOM nodes). ${String(error)}`,
+      { cause: error },
+    );
+  }
 }

@@ -6,6 +6,7 @@ import {
   removePlayer,
   renamePlayer,
   validatePlayerName,
+  visibleLength,
   type PlayerList,
 } from './players';
 
@@ -39,6 +40,40 @@ describe('player names', () => {
     if (!r.ok) expect(r.error.code).toBe(code);
   });
 
+  it.each([
+    ['zero-width spaces only', '\u200B\u200B'],
+    ['a BOM and a direction mark', '\uFEFF\u200F'],
+    ['control characters only', '\u0007\u0000'],
+    ['a lone zero-width joiner', '\u200D'],
+  ])('rejects a name made of %s', (_label, name) => {
+    const r = validatePlayerName(name, []);
+    expect(!r.ok && r.error.code).toBe('name-empty');
+  });
+
+  it('strips invisible and control characters from otherwise valid names', () => {
+    const r = validatePlayerName('\u200BRa\u0007vi\uFEFF', []);
+    expect(r.ok && r.value).toBe('Ravi');
+  });
+
+  it('keeps emoji built with the zero-width joiner intact', () => {
+    const family = '👨‍👩‍👧';
+    const r = validatePlayerName(family, []);
+    expect(r.ok && r.value).toBe(family);
+  });
+
+  it('counts length the way a person would (emoji count as one)', () => {
+    const family = '👨‍👩‍👧';
+    expect(visibleLength(family)).toBe(1);
+    expect(validatePlayerName(family.repeat(PLAYER_NAME_MAX_LENGTH), []).ok).toBe(true);
+    const tooLong = validatePlayerName(family.repeat(PLAYER_NAME_MAX_LENGTH + 1), []);
+    expect(!tooLong.ok && tooLong.error.code).toBe('name-too-long');
+  });
+
+  it('treats a non-string name as empty instead of crashing', () => {
+    const r = validatePlayerName(undefined as unknown as string, []);
+    expect(!r.ok && r.error.code).toBe('name-empty');
+  });
+
   it('rejects duplicates case-insensitively', () => {
     const r = addPlayer(build('Ravi'), 'ravi', { idFactory });
     expect(r.ok).toBe(false);
@@ -52,6 +87,10 @@ describe('player list operations', () => {
     const r = addPlayer(before, 'B', { idFactory });
     expect(r.ok && r.value.map((p) => p.name)).toEqual(['A', 'B']);
     expect(before).toHaveLength(1);
+  });
+
+  it.each([0, -1, 2.5, Number.NaN])('throws on an invalid maxPlayers (%s)', (maxPlayers) => {
+    expect(() => addPlayer([], 'A', { maxPlayers })).toThrow(RangeError);
   });
 
   it('enforces the player limit', () => {

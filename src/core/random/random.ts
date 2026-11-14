@@ -1,12 +1,27 @@
 import { browserRandom, type RandomSource } from './source';
 
+/**
+ * Largest range randomInt supports. Random sources have 32 bits of resolution
+ * (the browser source uses one Uint32 per draw), so wider ranges would leave
+ * some values unreachable.
+ */
+export const MAX_RANDOM_RANGE = 2 ** 32;
+
 /** Integer in [min, max], both inclusive. */
 export function randomInt(min: number, max: number, rng: RandomSource = browserRandom): number {
-  if (!Number.isInteger(min) || !Number.isInteger(max)) {
-    throw new RangeError('randomInt: min and max must be integers');
+  if (!Number.isSafeInteger(min) || !Number.isSafeInteger(max)) {
+    throw new RangeError('randomInt: min and max must be safe integers');
   }
   if (min > max) throw new RangeError('randomInt: min must not be greater than max');
-  return min + Math.floor(rng.next() * (max - min + 1));
+  const range = max - min + 1;
+  if (range > MAX_RANDOM_RANGE) {
+    throw new RangeError(`randomInt: range must not exceed ${MAX_RANDOM_RANGE} values`);
+  }
+  const x = rng.next();
+  if (!(x >= 0 && x < 1)) {
+    throw new RangeError(`randomInt: RandomSource.next() returned ${x}, expected [0, 1)`);
+  }
+  return min + Math.floor(x * range);
 }
 
 /** One random item. Throws on an empty list. */

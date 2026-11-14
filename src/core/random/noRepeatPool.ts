@@ -10,6 +10,10 @@ import { browserRandom, type RandomSource } from './source';
  * - `'reshuffle'` (default): starts a new cycle, and makes sure the first item
  *   of the new cycle isn't the one that was just drawn.
  * - `'stop'`: `draw()` returns `undefined` until `reset()` is called.
+ *
+ * "No repeat" is about positions in the list, not values: if the list contains
+ * the same value twice, both copies are drawn. Pass unique items (e.g. content
+ * items with distinct ids) when repeats must never happen.
  */
 export interface NoRepeatPool<T> {
   draw(): T | undefined;

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter } from 'react-router';
 import { App } from '@/app/App';
 import { routes } from '@/app/routes';
@@ -25,7 +25,20 @@ function Broken(): never {
   throw new Error('boom');
 }
 
+// Fails while `flakyOffline` is true, then succeeds: like a network outage or
+// a chunk that was briefly unavailable after a deploy. (React itself retries a
+// failed render once, so the number of attempts isn't fixed.)
+let flakyOffline = true;
+let flakyAttempts = 0;
+const flakyLoad = () => {
+  flakyAttempts += 1;
+  return flakyOffline
+    ? Promise.reject(new Error('network blip'))
+    : Promise.resolve({ default: FixtureGame });
+};
+
 const registry = createGameRegistry([
+  defineGame({ meta: meta('flaky', 'Flaky Game'), load: flakyLoad }),
   defineGame({
     meta: meta('fixture', 'Fixture Game'),
     load: async () => ({ default: FixtureGame }),
@@ -47,7 +60,9 @@ function renderAt(path: string) {
 describe('routing', () => {
   it('renders the landing page with a launch link that opens a new tab', async () => {
     renderAt('/');
-    const link = await screen.findByRole('link', { name: /launch games/i });
+    const link = await screen.findByRole('link', {
+      name: /^launch games\s*\(opens in a new tab\)$/i,
+    });
     expect(link).toHaveAttribute('href', '/play');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link.getAttribute('rel')).toContain('noopener');
@@ -98,5 +113,29 @@ describe('routing', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     renderAt('/play/unloadable');
     expect(await screen.findByText(/unloadable game ran into a problem/i)).toBeInTheDocument();
+  });
+
+  it('lets the player retry a game whose code failed to load', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderAt('/play/flaky');
+    const retry = await screen.findByRole('button', { name: 'Try again' });
+    const attemptsWhileOffline = flakyAttempts;
+    flakyOffline = false;
+    fireEvent.click(retry);
+    expect(await screen.findByText('Fixture running: Flaky Game')).toBeInTheDocument();
+    // The failed load was not cached: retrying fetched the game again.
+    expect(flakyAttempts).toBeGreaterThan(attemptsWhileOffline);
+  });
+
+  it.each([
+    ['/', 'Play with Friends'],
+    ['/play', 'Choose a game · Play with Friends'],
+    ['/play/fixture', 'Fixture Game · Play with Friends'],
+    ['/play/planned', 'Planned Game · Play with Friends'],
+    ['/play/does-not-exist', 'Game not found · Play with Friends'],
+    ['/nowhere', 'Page not found · Play with Friends'],
+  ])('sets the tab title on %s', async (path, title) => {
+    renderAt(path);
+    await waitFor(() => expect(document.title).toBe(title));
   });
 });

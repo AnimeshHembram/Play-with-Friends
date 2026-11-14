@@ -87,3 +87,26 @@ describe('session isolation', () => {
     expect(a.state.score).toBe(0);
   });
 });
+
+describe('session state rules', () => {
+  it('rejects state that cannot be copied, with a clear message', () => {
+    expect(() => createSession({ gameId: 'g', initialState: { fn: () => 1 } })).toThrow(
+      /must be plain data/,
+    );
+  });
+
+  it('copies supported structured data (Date, Map, Set) instead of sharing it', () => {
+    const initial = { at: new Date(0), seen: new Set(['a']), scores: new Map([['a', 1]]) };
+    const s = createSession({ gameId: 'g', initialState: initial });
+    expect(s.state.at).toEqual(new Date(0));
+    expect(s.state.seen).not.toBe(initial.seen);
+    expect(s.state.scores.get('a')).toBe(1);
+  });
+
+  it('gives a reset session a fresh copy of the initial state', () => {
+    const initial = { picked: [] as string[] };
+    const reset = resetSession(createSession({ gameId: 'g', initialState: initial }), initial);
+    reset.state.picked.push('x');
+    expect(initial.picked).toEqual([]);
+  });
+});

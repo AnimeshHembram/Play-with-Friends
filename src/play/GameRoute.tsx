@@ -1,27 +1,55 @@
-import { Suspense, use, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useGameRegistry } from '@/app/GameRegistryContext';
 import { NotFoundPage } from '@/app/NotFoundPage';
+import { PageTitle } from '@/app/PageTitle';
 import { paths } from '@/app/paths';
-import { isPlayable, type GameDefinition, type GameEntryModule } from '@/core/games';
+import { isPlayable, type PlayableGameDefinition } from '@/core/games';
 import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
+import { LoadingMessage } from '@/shared/ui/LoadingMessage';
 
-// One load promise per game, so the game's code is fetched once and React can
-// suspend on a stable promise.
-const entryPromises = new WeakMap<GameDefinition, Promise<GameEntryModule>>();
+/**
+ * Loads and mounts a playable game.
+ *
+ * Each attempt gets its own React.lazy component. A failed download stays
+ * failed for that attempt (no repeated requests while the network is down),
+ * and "Try again" starts a fresh attempt instead of replaying the old failure.
+ * Successful downloads are cached by the browser, so re-creating the lazy
+ * component on a later visit does not fetch the game again.
+ */
+function PlayableGame({ definition }: { definition: PlayableGameDefinition }) {
+  const navigate = useNavigate();
+  const onExit = useCallback(() => navigate(paths.play), [navigate]);
+  const [attempt, setAttempt] = useState(() => ({ id: 0, Entry: lazy(definition.load) }));
+  const retry = () => setAttempt((prev) => ({ id: prev.id + 1, Entry: lazy(definition.load) }));
+  const { Entry } = attempt;
+  const { meta } = definition;
 
-function loadEntry(definition: GameDefinition): Promise<GameEntryModule> {
-  let promise = entryPromises.get(definition);
-  if (!promise) {
-    promise = definition.load!();
-    entryPromises.set(definition, promise);
-  }
-  return promise;
-}
-
-function GameHost({ definition, onExit }: { definition: GameDefinition; onExit: () => void }) {
-  const { default: Entry } = use(loadEntry(definition));
-  return <Entry meta={definition.meta} onExit={onExit} />;
+  return (
+    <ErrorBoundary
+      key={attempt.id}
+      fallback={() => (
+        <main className="placeholder" role="alert">
+          <h1>{meta.title} ran into a problem</h1>
+          <p>
+            <button type="button" onClick={retry}>
+              Try again
+            </button>{' '}
+            <button type="button" onClick={() => window.location.reload()}>
+              Reload page
+            </button>
+          </p>
+          <p>
+            <Link to={paths.play}>Back to games</Link>
+          </p>
+        </main>
+      )}
+    >
+      <Suspense fallback={<LoadingMessage>{`Loading ${meta.title}…`}</LoadingMessage>}>
+        <Entry meta={meta} onExit={onExit} />
+      </Suspense>
+    </ErrorBoundary>
+  );
 }
 
 /**
@@ -31,16 +59,19 @@ function GameHost({ definition, onExit }: { definition: GameDefinition; onExit: 
  */
 export function GameRoute() {
   const { gameId = '' } = useParams();
-  const navigate = useNavigate();
   const definition = useGameRegistry().get(gameId);
-  const onExit = useCallback(() => navigate(paths.play), [navigate]);
 
-  if (!definition) return <NotFoundPage message="We couldn't find that game." />;
+  if (!definition) {
+    return <NotFoundPage title="Game not found" message="We couldn't find that game." />;
+  }
+
+  const { meta } = definition;
 
   if (!isPlayable(definition)) {
     return (
       <main className="placeholder">
-        <h1>{definition.meta.title}</h1>
+        <PageTitle title={meta.title} />
+        <h1>{meta.title}</h1>
         <p>Coming soon.</p>
         <Link to={paths.play}>Back to games</Link>
       </main>
@@ -48,19 +79,9 @@ export function GameRoute() {
   }
 
   return (
-    <ErrorBoundary
-      key={definition.meta.id}
-      context={`game:${definition.meta.id}`}
-      fallback={
-        <main className="placeholder" role="alert">
-          <h1>{definition.meta.title} ran into a problem</h1>
-          <Link to={paths.play}>Back to games</Link>
-        </main>
-      }
-    >
-      <Suspense fallback={<p className="placeholder">Loading {definition.meta.title}…</p>}>
-        <GameHost definition={definition} onExit={onExit} />
-      </Suspense>
-    </ErrorBoundary>
+    <>
+      <PageTitle title={meta.title} />
+      <PlayableGame key={meta.id} definition={definition} />
+    </>
   );
 }

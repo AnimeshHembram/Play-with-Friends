@@ -1,5 +1,6 @@
 import {
   defineContentPack,
+  normalizeLocale,
   selectContentPack,
   validateContentPack,
   type ContentPack,
@@ -42,6 +43,45 @@ describe('content packs', () => {
   ] as const)('rejects %j', (over, code) => {
     const r = validateContentPack(pack(over as never));
     expect(!r.ok && r.error.code).toBe(code);
+  });
+
+  it.each([
+    [null, 'pack-invalid'],
+    ['not a pack', 'pack-invalid'],
+  ])('rejects a malformed pack (%j)', (input, code) => {
+    const r = validateContentPack(input as never);
+    expect(!r.ok && r.error.code).toBe(code);
+  });
+
+  it.each([
+    [{ items: null }, 'items-invalid'],
+    [{ items: 'abc' }, 'items-invalid'],
+    [{ items: [null] }, 'item-id-missing'],
+    [{ items: [{ id: 42 }] }, 'item-id-missing'],
+    [{ id: 7 }, 'pack-id-missing'],
+    [{ locale: undefined }, 'locale-invalid'],
+  ])('rejects malformed fields %j', (over, code) => {
+    const r = validateContentPack(pack(over as never));
+    expect(!r.ok && r.error.code).toBe(code);
+  });
+
+  it('accepts locale tags in any case', () => {
+    expect(validateContentPack(pack({ locale: 'EN-in' })).ok).toBe(true);
+  });
+
+  it('normalizes locales', () => {
+    expect(normalizeLocale(' en_IN ')).toBe('en-in');
+  });
+
+  it('matches locales regardless of case or underscores', () => {
+    const packs = [pack({ locale: 'en' }), pack({ locale: 'hi', id: 'tod-hi' })];
+    expect(selectContentPack(packs, 'hi_IN')?.id).toBe('tod-hi');
+    expect(selectContentPack(packs, 'HI')?.id).toBe('tod-hi');
+    expect(selectContentPack([pack({ locale: 'en-IN', id: 'in' })], 'en-in')?.id).toBe('in');
+  });
+
+  it('falls back to the fallback locale for an empty locale', () => {
+    expect(selectContentPack([pack({ locale: 'en' })], '')?.locale).toBe('en');
   });
 
   it('selects by exact locale, then base language, then fallback', () => {

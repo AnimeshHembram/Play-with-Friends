@@ -13,12 +13,21 @@ import type { ComponentType } from 'react';
  * but never forces a game to use them.
  */
 
-/** How a game is played. Descriptive only: the platform does not enforce it. */
-export type InteractionStyle =
-  | 'turn-based' //     players act one at a time (Truth or Dare)
-  | 'simultaneous' //   everyone responds at once (Never Have I Ever, voting)
-  | 'team-based' //     players split into teams (Dumb Charades)
-  | 'single-action'; // one tap produces a result, no turns needed (dice, picker)
+/**
+ * How a game is played. Descriptive only: the platform does not enforce it.
+ * - turn-based:    players act one at a time (Truth or Dare)
+ * - simultaneous:  everyone responds at once (Never Have I Ever, voting)
+ * - team-based:    players split into teams (Dumb Charades)
+ * - single-action: one tap produces a result, no turns needed (dice, picker)
+ */
+export const INTERACTION_STYLES = [
+  'turn-based',
+  'simultaneous',
+  'team-based',
+  'single-action',
+] as const;
+
+export type InteractionStyle = (typeof INTERACTION_STYLES)[number];
 
 export interface PlayerRequirements {
   /** Minimum players the game needs. 0 means it works without entering names. */
@@ -64,6 +73,11 @@ export function defineGame(definition: GameDefinition): GameDefinition {
   return definition;
 }
 
-export function isPlayable(definition: GameDefinition): boolean {
+/** A game whose entry component exists and can be started. */
+export type PlayableGameDefinition = GameDefinition & {
+  readonly load: () => Promise<GameEntryModule>;
+};
+
+export function isPlayable(definition: GameDefinition): definition is PlayableGameDefinition {
   return typeof definition.load === 'function';
 }

@@ -26,6 +26,8 @@ export interface ContentPack<TItem extends ContentItem = ContentItem> {
 }
 
 export type ContentErrorCode =
+  | 'pack-invalid'
+  | 'items-invalid'
   | 'pack-id-missing'
   | 'pack-game-missing'
   | 'locale-invalid'
@@ -34,23 +36,47 @@ export type ContentErrorCode =
   | 'item-id-missing'
   | 'item-id-duplicate';
 
-const LOCALE_PATTERN = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+// BCP 47 tags are case-insensitive ("en-IN" == "EN-in"). Underscores
+// ("en_IN", common in OS and browser settings) are treated as hyphens.
+const LOCALE_PATTERN = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i;
 
+/** Lower-cases a locale and turns "en_IN" into "en-in". */
+export function normalizeLocale(locale: string): string {
+  return locale.trim().replace(/_/g, '-').toLowerCase();
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+/**
+ * Checks a pack's structure. Accepts `unknown` input so that content loaded
+ * from JSON (later phases) is reported as a readable error, not a crash.
+ */
 export function validateContentPack<TItem extends ContentItem>(
   pack: ContentPack<TItem>,
 ): Result<ContentPack<TItem>, ContentErrorCode> {
-  if (!pack.id) return fail('pack-id-missing', 'Content pack is missing an id.');
-  if (!pack.gameId) return fail('pack-game-missing', `Pack "${pack.id}" is missing a gameId.`);
-  if (!LOCALE_PATTERN.test(pack.locale)) {
+  if (!isRecord(pack)) return fail('pack-invalid', 'Content pack must be an object.');
+  if (typeof pack.id !== 'string' || !pack.id) {
+    return fail('pack-id-missing', 'Content pack is missing an id.');
+  }
+  if (typeof pack.gameId !== 'string' || !pack.gameId) {
+    return fail('pack-game-missing', `Pack "${pack.id}" is missing a gameId.`);
+  }
+  if (typeof pack.locale !== 'string' || !LOCALE_PATTERN.test(pack.locale)) {
     return fail('locale-invalid', `Pack "${pack.id}" has an invalid locale "${pack.locale}".`);
   }
   if (!Number.isInteger(pack.version) || pack.version < 1) {
     return fail('version-invalid', `Pack "${pack.id}" needs a whole-number version of 1 or more.`);
   }
+  if (!Array.isArray(pack.items)) {
+    return fail('items-invalid', `Pack "${pack.id}" must have an items array.`);
+  }
   if (pack.items.length === 0) return fail('pack-empty', `Pack "${pack.id}" has no items.`);
   const seen = new Set<string>();
-  for (const item of pack.items) {
-    if (!item.id) return fail('item-id-missing', `Pack "${pack.id}" has an item without an id.`);
+  for (const item of pack.items as unknown[]) {
+    if (!isRecord(item) || typeof item.id !== 'string' || !item.id) {
+      return fail('item-id-missing', `Pack "${pack.id}" has an item without an id.`);
+    }
     if (seen.has(item.id)) {
       return fail('item-id-duplicate', `Pack "${pack.id}" has a duplicate item id "${item.id}".`);
     }
@@ -68,18 +94,17 @@ export function defineContentPack<TItem extends ContentItem>(
 
 /**
  * Picks the best pack for a locale: exact match ("en-IN"), then base language
- * ("en"), then the fallback locale. Returns undefined if nothing matches.
+ * ("en"), then the fallback locale. Matching ignores case and treats "_" as
+ * "-". Returns undefined if nothing matches.
  */
 export function selectContentPack<TItem extends ContentItem>(
   packs: readonly ContentPack<TItem>[],
   locale: string,
   fallbackLocale = 'en',
 ): ContentPack<TItem> | undefined {
-  const lower = (s: string) => s.toLowerCase();
-  const base = lower(locale).split('-')[0];
-  return (
-    packs.find((p) => lower(p.locale) === lower(locale)) ??
-    packs.find((p) => lower(p.locale) === base) ??
-    packs.find((p) => lower(p.locale) === lower(fallbackLocale))
-  );
+  const wanted = normalizeLocale(locale);
+  const base = wanted.split('-')[0];
+  const find = (target: string | undefined) =>
+    target ? packs.find((p) => normalizeLocale(p.locale) === target) : undefined;
+  return find(wanted) ?? find(base) ?? find(normalizeLocale(fallbackLocale));
 }

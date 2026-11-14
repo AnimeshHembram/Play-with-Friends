@@ -26,19 +26,22 @@ Dependencies only point inward. ESLint enforces this, so `npm run lint` fails if
 - `src/core` imports from `app`, `play`, `landing`, `games` or `shared`
 - `src/shared` imports from `app`, `play`, `landing` or `games`
 - a game imports from another game, either through `@/games/...` or a relative path that climbs out of its own folder
+- a game's `index.ts` imports the game's own files normally (type-only imports are allowed). Game code must load through `load: () => import(...)`.
 
 ## Application layer (`src/app`, `src/landing`, `src/play`)
 
-| File                          | Responsibility                                                            |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| `main.tsx`                    | Creates the browser router, installs global error handlers, renders `App` |
-| `app/App.tsx`                 | Root error boundary, registry provider, router provider                   |
-| `app/routes.tsx`              | Route map (below)                                                         |
-| `app/paths.ts`                | Every route path in one place                                             |
-| `app/config.ts`               | Global config from `VITE_` env vars, with defaults                        |
-| `app/gameRegistry.ts`         | Discovers `src/games/*/index.ts` and builds the registry                  |
-| `app/GameRegistryContext.tsx` | Supplies the registry to the UI (tests inject fixture registries)         |
-| `app/errors.ts`               | Global `error` / `unhandledrejection` handlers                            |
+| File                                             | Responsibility                                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `main.tsx`                                       | Creates the browser router, wires error reporting (React root hooks and global handlers), renders `App` |
+| `app/App.tsx`                                    | Root error boundary, registry provider, router provider                                                 |
+| `app/routes.tsx`                                 | Route map (below)                                                                                       |
+| `app/paths.ts`                                   | Every route path in one place                                                                           |
+| `app/config.ts`                                  | Global config from `VITE_` env vars, with defaults                                                      |
+| `app/gameRegistry.ts`                            | Discovers `src/games/*/index.ts` and builds the registry                                                |
+| `app/GameRegistryContext.tsx`                    | Supplies the registry to the UI (tests inject fixture registries)                                       |
+| `app/errors.ts`                                  | Global `error` / `unhandledrejection` handlers                                                          |
+| `app/PageTitle.tsx`                              | Sets the browser tab title per page (React 19 `<title>` hoisting)                                       |
+| `app/NotFoundPage.tsx`, `app/RouteErrorPage.tsx` | Not-found and route-error pages                                                                         |
 
 ### Routing
 
@@ -49,15 +52,32 @@ Dependencies only point inward. ESLint enforces this, so `npm run lint` fails if
 | `/play/:gameId` | That game's entry, a "coming soon" page, or "game not found" |
 | `*`             | Not found                                                    |
 
-The landing page and the gaming experience are separate route trees. Everything under `/play` is lazy-loaded, so someone who only visits the landing page never downloads game code.
+The landing page and the gaming experience are separate route trees. Everything under `/play` is lazy-loaded, so someone who only visits the landing page never downloads game code. On a direct visit to a `/play` URL (for example, the new tab), the route's `hydrateFallbackElement` shows a loading message while that code downloads.
 
-**New-tab launch.** The landing page's launch button is `shared/ui/LaunchLink`: a real `<a target="_blank" rel="noopener noreferrer">`. A link the user clicks always opens, unlike `window.open()` from script, which popup blockers can stop. It also supports middle-click and works for keyboard and screen-reader users. `noopener` stops the game tab from controlling the landing tab.
+Every page sets its own tab title (`Rolling Dice · Play with Friends`). Loading messages use `role="status"` so screen readers announce them.
 
-**Error containment.** Three levels:
+**Hosting.** Deep links depend on the host serving `index.html` for unknown paths. Cloudflare Pages does this automatically when there's no top-level `404.html`, so the repo deliberately has no `_redirects` file (see the README's Deployment section).
 
-1. Root `ErrorBoundary` in `App`, so the page is never left blank.
-2. `errorElement` on route trees, for routes that fail to load.
-3. A boundary around every running game, so a crash, or game code that fails to download, shows a message and a "Back to games" link while the rest of the platform keeps working.
+**New-tab launch.** The landing page's launch button is `shared/ui/LaunchLink`: a real `<a target="_blank" rel="noopener noreferrer">`. A link the user clicks always opens, unlike `window.open()` from script, which popup blockers can stop. It also supports middle-click and works for keyboard and screen-reader users, and it includes visually hidden "(opens in a new tab)" text. `noopener` stops the game tab from controlling the landing tab.
+
+**Error containment.** Four levels:
+
+1. **Root `ErrorBoundary` in `App`**, so the page is never left blank.
+2. **`errorElement` on every route tree** (including `*`), for routes that fail to load or render.
+3. **A boundary around every running game.** A crash, or game code that fails to download, shows a message with **Try again**, **Reload page** and **Back to games** while the rest of the platform keeps working.
+   - Each attempt uses its own `React.lazy` component, so a failed download isn't retried in a loop while the network is down.
+   - "Try again" starts a fresh attempt instead of replaying the old failure.
+   - "Reload page" covers browsers that remember a failed module download.
+4. **Registry isolation.** In production, a game whose definition is invalid is skipped and reported, and every other game keeps working. See [Discovery and registry](#discovery-and-registry).
+
+**Error reporting.** Every error goes through `shared/lib/reportError`, which logs to the console for now and is the single place a future reporting service would plug into.
+
+| Source                                                          | How it's reported                                                                                     |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Errors caught by any error boundary, and uncaught render errors | React root hooks `onCaughtError` / `onUncaughtError` / `onRecoverableError` in `main.tsx` (once each) |
+| Route load failures, which never reach React's hooks            | `RouteErrorPage`                                                                                      |
+| Errors outside React (stray promise rejections, script errors)  | `installGlobalErrorHandlers`                                                                          |
+| Skipped invalid games in production                             | `buildGameRegistry`'s `onError`                                                                       |
 
 ## Game module architecture
 
@@ -95,10 +115,12 @@ src/games/truth-or-dare/index.ts ──┐
 src/games/rolling-dice/index.ts  ──┼─ import.meta.glob (eager, metadata only)
 ...                              ──┘         │
                                              ▼
-                          collectGameDefinitions()  checks default export, folder == id
+                          toGameDefinition()        checks default export, folder == id
                                              │
                                              ▼
-                          createGameRegistry()      validates meta, rejects duplicate ids
+                          buildGameRegistry()       validates meta, rejects duplicate ids
+                                                    strict (dev/test): throw
+                                                    production: skip + report
                                              │
                                              ▼
                           get(id) / has(id) / list()  sorted by order, then title
@@ -106,7 +128,31 @@ src/games/rolling-dice/index.ts  ──┼─ import.meta.glob (eager, metadata 
 
 Discovery runs at build time through Vite's `import.meta.glob`, so there's no runtime directory scanning. Only the small metadata module is eager. A game's real code is a separate chunk, loaded when the player opens it.
 
-Invalid metadata or a duplicate id **throws during registration**. That's a developer mistake, so it should break tests and the build, not fail silently in production. `tests/app/gameRegistry.test.ts` checks that the real catalogue is discovered.
+**Validation.** Registration checks:
+
+- the id is a lowercase slug
+- `title` and `description` are non-empty strings
+- `players.min` is a whole number of 0 or more, and `players.max` is `null` or a whole number no smaller than `min`
+- `interaction` uses only the known styles
+- `order`, if set, is a finite number
+- `load`, if set, is a function
+
+Malformed input (`null`, wrong types, plain JS modules) produces a readable `GameRegistryError`, never a raw `TypeError`.
+
+**Invalid games: loud in development, isolated in production** (`app/gameRegistry.ts`):
+
+| Environment                   | `strict` | An invalid or duplicate game…                                              |
+| ----------------------------- | -------- | -------------------------------------------------------------------------- |
+| `npm run dev`, `npm test`, CI | `true`   | throws immediately, so the mistake can't be missed and CI fails            |
+| Production build              | `false`  | is skipped and reported with `reportError`. Every other game keeps working |
+
+`tests/app/gameRegistry.test.ts` loads the real catalogue in strict mode, so CI fails before a broken game can ship. The browser smoke tests check that all seven games appear in the production build.
+
+**Known limit.** A game's `index.ts` that _throws while being imported_ would still stop the app from starting, because all metadata modules are imported eagerly. The metadata-only lint rule makes this very unlikely, and the strict registry test catches it in CI.
+
+### Player-count check
+
+`checkPlayerCount(meta.players, count)` returns a `Result`: `too-few-players`, `too-many-players` or `invalid-count`, each with a readable message. It only checks the number. How players take part (turns, teams, voting) stays inside each game.
 
 ### Adding a game
 
@@ -150,7 +196,12 @@ Pure TypeScript with no React (apart from the `ComponentType` type in the game c
 
 ### Players (`core/players`)
 
-Immutable list operations: `addPlayer`, `removePlayer`, `renamePlayer`, `movePlayer`, `validatePlayerName`. Names are trimmed, limited to 24 characters, and unique regardless of case. The default cap is 20 players and can be changed per game. Order is simply the order of the list.
+Immutable list operations: `addPlayer`, `removePlayer`, `renamePlayer`, `movePlayer`, `validatePlayerName`. Order is simply the order of the list.
+
+- **Names are cleaned:** control characters and invisible formatting characters (zero-width spaces, direction marks) are removed, then the name is trimmed and internal spaces collapsed. The zero-width joiner is kept so emoji like 👨‍👩‍👧 stay intact.
+- A name must contain at least one visible character (letter, number, symbol, emoji or punctuation).
+- Names can be at most 24 characters, counted the way a person would (`visibleLength`: one emoji is one character), and must be unique regardless of case.
+- The default cap is 20 players and can be changed per game. `maxPlayers` must be a whole number of 1 or more, otherwise `addPlayer` throws.
 
 **There is no turn system in core.** Truth or Dare goes around the circle, Who's Most Likely To? has everyone vote at once, Dumb Charades plays in teams, and Rolling Dice has no players at all. A turn helper only moves into core once two or more games actually need the same one.
 
@@ -168,7 +219,8 @@ ready ──start──▶ active ──pause──▶ paused
 - `reset` works from any status and returns to `ready` with fresh state.
 - After `end`, nothing else is allowed.
 - `TState` is defined by each game. The platform never looks inside it.
-- **Isolation:** each session gets a unique id and a `structuredClone` of its initial state, so sessions never share mutable data. Leaving a game's route unmounts its tree and discards the session.
+- **Isolation:** each session gets a unique id and a `structuredClone` of its initial state, so sessions never share mutable data. Leaving a game's route unmounts its tree and discards the session. Nothing is written to browser storage, so tabs never share state.
+- **State must be plain data:** objects, arrays, primitives, `Date`, `Map`, `Set`. Functions throw a clear `TypeError`, and class instances would turn into plain objects. Updates should return new objects, never module-level ones shared between sessions.
 - Games that don't pause just never call `pauseSession`.
 
 Not built yet: persistence (for example, surviving a page refresh) and a React hook wrapper. Both should be added when the first game needs them.
@@ -186,6 +238,12 @@ Not built yet: persistence (for example, surviving a page refresh) and a React h
 
 Every helper takes an optional `RandomSource`, so tests can be deterministic.
 
+Limits are checked, not assumed:
+
+- `randomInt` needs safe integers and a range of at most 2³² values (`MAX_RANDOM_RANGE`, the generator's resolution).
+- It throws if a `RandomSource` returns anything outside [0, 1).
+- The no-repeat pool works on list positions, so pass unique items if a value must never come up twice.
+
 ### Content (`core/content`)
 
 Content stays out of game logic. A `ContentPack` is one game's items in one locale:
@@ -194,11 +252,12 @@ Content stays out of game logic. A `ContentPack` is one game's items in one loca
 { id, gameId, locale: 'en', version: 1, items: [{ id: 't-001', ... }] }
 ```
 
-Each item needs a stable `id`, used for no-repeat tracking and future features. The rest of the item's shape is up to the game. `validateContentPack` checks the structure. `selectContentPack(packs, 'hi-IN')` tries an exact match first, then the base language, then the fallback (`en`). No content has been written yet.
+Each item needs a stable `id`, used for no-repeat tracking and future features. The rest of the item's shape is up to the game. `validateContentPack` checks the structure, accepts `unknown` input (ready for JSON content later), and returns readable errors for malformed packs. `selectContentPack(packs, 'hi-IN')` tries an exact match first, then the base language, then the fallback (`en`). Locale matching ignores case and treats `_` as `-`, so `hi_IN` finds the Hindi pack. No content has been written yet.
 
 ## Shared (`src/shared`)
 
-- `ui/ErrorBoundary`: render-error containment, reports through `reportError`
+- `ui/ErrorBoundary`: render-error containment with an optional reset (`fallback={(reset) => …}`)
+- `ui/LoadingMessage`: loading text announced to screen readers
 - `ui/LaunchLink`: opens the gaming experience in a new tab
 - `lib/reportError`: single error-reporting point (console for now)
 

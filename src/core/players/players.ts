@@ -32,9 +32,35 @@ export type PlayerErrorCode =
 
 export type PlayerResult<T> = Result<T, PlayerErrorCode>;
 
-/** Trims the name and collapses internal runs of whitespace to one space. */
+// Control characters and invisible formatting characters (zero-width spaces,
+// direction marks, BOM...) are removed. The zero-width joiner (U+200D) is kept
+// because emoji such as family or profession emoji are built with it.
+const INVISIBLE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu;
+const ZWJ = '\u200D';
+// A name must contain at least one letter, number, symbol (incl. emoji) or punctuation mark.
+const VISIBLE = /[\p{L}\p{N}\p{S}\p{P}]/u;
+
+/**
+ * Cleans a name: removes control/invisible characters, trims, and collapses
+ * internal runs of whitespace to one space.
+ */
 export function normalizePlayerName(name: string): string {
-  return name.trim().replace(/\s+/g, ' ');
+  return name
+    .replace(INVISIBLE, (ch) => (ch === ZWJ ? ch : ''))
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * Length as a person would count it: "👨‍👩‍👧" is one character, not eight.
+ * Falls back to counting code points where Intl.Segmenter is unavailable.
+ */
+export function visibleLength(text: string): number {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text))
+      .length;
+  }
+  return [...text].length;
 }
 
 /**
@@ -47,9 +73,9 @@ export function validatePlayerName(
   players: PlayerList,
   ignoreId?: string,
 ): PlayerResult<string> {
-  const name = normalizePlayerName(rawName);
-  if (name.length === 0) return fail('name-empty', 'Enter a name for the player.');
-  if (name.length > PLAYER_NAME_MAX_LENGTH) {
+  const name = typeof rawName === 'string' ? normalizePlayerName(rawName) : '';
+  if (!VISIBLE.test(name)) return fail('name-empty', 'Enter a name for the player.');
+  if (visibleLength(name) > PLAYER_NAME_MAX_LENGTH) {
     return fail(
       'name-too-long',
       `Player names can be at most ${PLAYER_NAME_MAX_LENGTH} characters.`,
@@ -62,6 +88,7 @@ export function validatePlayerName(
 }
 
 export interface AddPlayerOptions {
+  /** Whole number, 1 or more. Defaults to DEFAULT_MAX_PLAYERS. */
   maxPlayers?: number;
   idFactory?: IdFactory;
 }
@@ -71,6 +98,9 @@ export function addPlayer(
   rawName: string,
   { maxPlayers = DEFAULT_MAX_PLAYERS, idFactory = createId }: AddPlayerOptions = {},
 ): PlayerResult<PlayerList> {
+  if (!Number.isInteger(maxPlayers) || maxPlayers < 1) {
+    throw new RangeError('addPlayer: maxPlayers must be a whole number of 1 or more');
+  }
   if (players.length >= maxPlayers) {
     return fail('player-limit-reached', `A game can have at most ${maxPlayers} players.`);
   }

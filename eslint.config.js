@@ -71,4 +71,26 @@ export default tseslint.config(
       ],
     },
   })),
+  // A game's index.ts is loaded for every visitor (it's how games are
+  // discovered), so it must stay metadata-only. Importing the game's own files
+  // normally would pull the whole game into the main bundle. Use
+  // `load: () => import('./MyGame')` instead. Type-only imports are fine.
+  {
+    files: ['src/games/*/index.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.{1,2}/',
+              allowTypeImports: true,
+              message:
+                "A game's index.ts must stay metadata-only. Load the game lazily with load: () => import('./MyGame').",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

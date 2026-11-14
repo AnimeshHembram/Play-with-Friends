@@ -12,3 +12,6 @@ Thumbs.db
 !.vscode/extensions.json
 .idea
 npm-debug.log*
+playwright-report
+test-results
+blob-report

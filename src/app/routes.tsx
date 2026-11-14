@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router';
 import { paths } from './paths';
 import { LandingPage } from '@/landing/LandingPage';
+import { LoadingMessage } from '@/shared/ui/LoadingMessage';
 import { NotFoundPage } from './NotFoundPage';
 import { RouteErrorPage } from './RouteErrorPage';
 
@@ -25,6 +26,8 @@ export const routes: RouteObject[] = [
   {
     path: paths.play,
     errorElement: <RouteErrorPage />,
+    // Shown while the lazy /play code loads on a direct visit (e.g. a new tab).
+    hydrateFallbackElement: <LoadingMessage />,
     lazy: async () => ({ Component: (await import('@/play/PlayLayout')).PlayLayout }),
     children: [
       {
@@ -39,5 +42,5 @@ export const routes: RouteObject[] = [
       },
     ],
   },
-  { path: '*', element: <NotFoundPage /> },
+  { path: '*', element: <NotFoundPage />, errorElement: <RouteErrorPage /> },
 ];

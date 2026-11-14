@@ -11,6 +11,7 @@ import {
   shuffle,
   shuffleDeck,
   browserRandom,
+  MAX_RANDOM_RANGE,
 } from './index';
 
 const rng = () => createSeededRandom(42);
@@ -59,6 +60,25 @@ describe('randomInt', () => {
   it('rejects invalid ranges', () => {
     expect(() => randomInt(5, 1)).toThrow(RangeError);
     expect(() => randomInt(0.5, 3)).toThrow(RangeError);
+    expect(() => randomInt(Number.NaN, 3)).toThrow(RangeError);
+    expect(() => randomInt(0, Number.MAX_SAFE_INTEGER + 2)).toThrow(RangeError);
+  });
+
+  it('supports ranges up to the 32-bit limit and rejects wider ones', () => {
+    expect(randomInt(0, MAX_RANDOM_RANGE - 1, rng())).toBeLessThan(MAX_RANDOM_RANGE);
+    expect(() => randomInt(0, MAX_RANDOM_RANGE)).toThrow(RangeError);
+  });
+
+  it('handles a single-value range and the very top of [0, 1)', () => {
+    expect(randomInt(7, 7, rng())).toBe(7);
+    expect(randomInt(1, 6, { next: () => 0.9999999999999999 })).toBe(6);
+    expect(randomInt(1, 6, { next: () => 0 })).toBe(1);
+  });
+
+  it('rejects a faulty random source instead of returning out-of-range values', () => {
+    expect(() => randomInt(1, 6, { next: () => 1 })).toThrow(RangeError);
+    expect(() => randomInt(1, 6, { next: () => -0.1 })).toThrow(RangeError);
+    expect(() => randomInt(1, 6, { next: () => Number.NaN })).toThrow(RangeError);
   });
 });
 
