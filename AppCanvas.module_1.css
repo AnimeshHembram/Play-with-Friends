@@ -1,0 +1,13 @@
+.canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh; /* follows the mobile address bar as it shows and hides */
+  width: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition:
+    background-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
+}

@@ -1,18 +1,16 @@
 import { appConfig } from '@/app/config';
 import { PageTitle } from '@/app/PageTitle';
-import { paths } from '@/app/paths';
-import { LaunchLink } from '@/shared/ui/LaunchLink';
 
-/** Structural placeholder. The real landing page is designed in a later phase. */
+/**
+ * The home screen: an intentionally blank canvas. The menu button in the
+ * top-left corner (rendered by AppCanvas) is the only control. The heading is
+ * for screen readers and the page outline; it isn't shown.
+ */
 export function LandingPage() {
   return (
-    <main className="placeholder">
+    <main className="canvas-main">
       <PageTitle />
-      <h1>{appConfig.appName}</h1>
-      <p>Party games for your group. No app, no account.</p>
-      <LaunchLink href={paths.play} className="button">
-        Launch games
-      </LaunchLink>
+      <h1 className="visually-hidden">{appConfig.appName}</h1>
     </main>
   );
 }

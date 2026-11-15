@@ -122,3 +122,7 @@ React Router recommends `react-router/dom` for browser apps, but that entry only
 ## D24. No license, for now
 
 The repository is public but intentionally all rights reserved. Choosing a license is the owner's decision and is deferred.
+
+## D25. Minimal canvas first; appearance settings in the menu, session-only
+
+The UI starts as a blank full-screen canvas with one hamburger menu, instead of a designed landing page and catalogue. The menu holds appearance settings (theme mode, background, accent) and the existing "Launch games" link, so `/play` stays reachable. Users can pick any colour. The app derives text, borders, focus ring and on-accent text from the picks and adjusts them to meet WCAG 2.2 AA, so a colour choice can't make the interface unreadable. Settings live in React state only: they reset on reload and aren't shared across tabs or devices. Persisting them (for example in `sessionStorage` or `localStorage`) is a separate decision to discuss first.

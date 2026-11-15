@@ -40,8 +40,9 @@ test.describe('routes', () => {
 
   test('landing page', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1, name: 'Play with Friends' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Play with Friends' })).toBeAttached();
     await expect(page).toHaveTitle('Play with Friends');
+    await page.getByRole('button', { name: 'Open menu' }).click();
     const launch = page.getByRole('link', { name: /launch games/i });
     await expect(launch).toHaveAttribute('href', '/play');
     await expect(launch).toHaveAttribute('target', '_blank');
@@ -80,6 +81,7 @@ test.describe('routes', () => {
 test.describe('navigation', () => {
   test('launch button opens the games in a new tab', async ({ page, context }) => {
     await page.goto('/');
+    await page.getByRole('button', { name: 'Open menu' }).click();
     const [gameTab] = await Promise.all([
       context.waitForEvent('page'),
       page.getByRole('link', { name: /launch games/i }).click(),

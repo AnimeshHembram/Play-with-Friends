@@ -47,7 +47,7 @@ Dependencies only point inward. ESLint enforces this, so `npm run lint` fails if
 
 | Path            | What renders                                                 |
 | --------------- | ------------------------------------------------------------ |
-| `/`             | Landing page (placeholder)                                   |
+| `/`             | Blank full-screen canvas (menu in the top-left corner)       |
 | `/play`         | Gaming experience: game selection (placeholder list)         |
 | `/play/:gameId` | That game's entry, a "coming soon" page, or "game not found" |
 | `*`             | Not found                                                    |
@@ -263,4 +263,8 @@ Each item needs a stable `id`, used for no-repeat tracking and future features. 
 
 ## Styling
 
-`src/styles/global.css` holds a small reset, a few CSS custom properties and placeholder classes. It is not a design system. Component styles will use CSS Modules, which Vite supports with no extra dependency. The visual design is a later phase.
+`src/styles/global.css` holds a small reset and the base tokens (colour, spacing, radius, touch target, motion). Component styles use CSS Modules.
+
+Every route renders inside `AppCanvas` (`src/app/AppCanvas.tsx`): a full-viewport canvas (`100dvh`, safe-area aware) with one fixed hamburger button in the top-left corner. It opens `AppMenu`, a native modal `<dialog>` that is a bottom sheet on upright phones, a side drawer on tablets and landscape phones, and a compact panel on large screens.
+
+Appearance settings (`src/app/theme`) hold theme mode (system, light, dark), background colour and accent colour in React state for the current tab only. `derivePalette` (`src/shared/lib/color.ts`) turns the chosen background and accent into a full palette and nudges any colour that would fall below WCAG 2.2 AA contrast (4.5:1 text, 3:1 controls and focus). The palette is written to CSS custom properties on `<html>`, so changes apply instantly everywhere.

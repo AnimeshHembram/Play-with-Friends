@@ -58,8 +58,12 @@ function renderAt(path: string) {
 }
 
 describe('routing', () => {
-  it('renders the landing page with a launch link that opens a new tab', async () => {
+  it('renders the blank home canvas, with a launch link in the menu that opens a new tab', async () => {
     renderAt('/');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Play with Friends' }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
     const link = await screen.findByRole('link', {
       name: /^launch games\s*\(opens in a new tab\)$/i,
     });

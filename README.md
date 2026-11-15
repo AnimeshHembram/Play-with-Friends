@@ -2,7 +2,7 @@
 
 A browser-based multi-game party platform. Open the site, pick a game, play. No install, no account, no login.
 
-> **Status: foundation complete (Phases 01–02).** The technical foundation is built, hardened and validated. No games are playable yet. The seven planned games are registered as metadata only and show as "coming soon". UI/UX design and gameplay come in later phases.
+> **Status: foundation complete (Phases 01–02), minimal UI canvas in progress.** The app opens on a blank, responsive full-screen canvas with a menu in the top-left corner for appearance settings (light/dark/system, background and accent colour). No games are playable yet. The seven planned games are registered as metadata only and show as "coming soon".
 
 ## Planned games
 
