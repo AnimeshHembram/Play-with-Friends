@@ -1,0 +1,29 @@
+.tile {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  aspect-ratio: 1;
+  border-radius: 28%;
+  background: var(--tile-bg);
+  color: var(--color-tile-ink);
+  /* A subtle inner edge so light tiles stay defined on light backgrounds. */
+  box-shadow: inset 0 0 0 1px rgb(30 26 41 / 0.08);
+}
+
+.sm {
+  width: 2.75rem;
+}
+
+.md {
+  width: 3.5rem;
+}
+
+.lg {
+  width: 4.5rem;
+}
+
+@media (forced-colors: active) {
+  .tile {
+    border: 2px solid CanvasText;
+  }
+}

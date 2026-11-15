@@ -1,0 +1,57 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tip {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + var(--space-2));
+  z-index: var(--z-tooltip);
+  width: max-content;
+  max-width: min(16rem, 70vw);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  text-align: center;
+  pointer-events: none;
+  /* Hidden tips take no space, so they can never cause sideways scrolling. */
+  display: none;
+  transform: translateX(-50%);
+}
+
+.tip[data-align='start'] {
+  left: 0;
+  transform: none;
+}
+
+.tip[data-align='end'] {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.tip[data-placement='top'] {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+}
+
+/* Shown for real hover (mouse, pen) and for keyboard focus. Touch devices
+   without hover never see it; the information is always available elsewhere. */
+@media (hover: hover) {
+  .wrapper:hover .tip {
+    display: block;
+  }
+}
+
+.wrapper:has(:focus-visible) .tip {
+  display: block;
+}
+
+.wrapper[data-dismissed] .tip {
+  display: none;
+}

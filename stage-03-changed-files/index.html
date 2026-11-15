@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      viewport-fit=cover lets the layout use the full screen on notched phones;
+      the CSS keeps content inside the safe area with env(safe-area-inset-*).
+      Zoom is never disabled.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#120f1c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fbf7f1" media="(prefers-color-scheme: light)" />
+    <meta name="description" content="Party games to play with friends, right in your browser." />
+    <title>Play with Friends</title>
+  </head>
+  <body>
+    <noscript>Play with Friends needs JavaScript enabled to run.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

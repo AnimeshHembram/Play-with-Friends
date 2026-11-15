@@ -1,0 +1,29 @@
+.content {
+  padding-block: var(--space-stack) var(--space-section);
+}
+
+.heading {
+  max-width: 40rem;
+  margin-block: clamp(var(--space-4), 3vw, var(--space-8))
+    clamp(var(--space-6), 4vw, var(--space-10));
+}
+
+.title {
+  font-size: var(--text-3xl);
+}
+
+.intro {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+}
+
+/* Content-driven columns: as many ~18rem cards as fit, from 1 on phones up
+   to 3 on wide screens (capped by the container width). */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: clamp(var(--space-3), 2vw, var(--space-5));
+  padding: 0;
+  list-style: none;
+}

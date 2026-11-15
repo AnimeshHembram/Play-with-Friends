@@ -1,0 +1,179 @@
+/*
+ * Global base styles: reset, page defaults and a handful of layout utilities.
+ * Component styles live next to their components as CSS Modules.
+ * Every value comes from tokens.css.
+ */
+@import './tokens.css';
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  /* Keep text at the size the user chose: no automatic inflation on rotate. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Room for a sticky header when jumping to in-page anchors. */
+  scroll-padding-top: 5rem;
+  /* Never scroll sideways. Content is built to fit; this is a backstop. */
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh; /* follows the mobile address bar as it shows/hides */
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Removes the grey flash when tapping links/buttons on mobile WebKit. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Taps on controls fire immediately (no double-tap-to-zoom delay). */
+a,
+button,
+input,
+label,
+select,
+summary,
+textarea {
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  line-height: var(--leading-tight);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.01em;
+  /* Long words (and long game titles) wrap instead of overflowing. */
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+p,
+li,
+dd {
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--color-primary-text);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 0.08em;
+}
+
+a:hover {
+  text-decoration-thickness: 0.14em;
+}
+
+/* One focus style everywhere. Only for keyboard focus, never on tap. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+}
+
+/* ── Utilities ─────────────────────────────────────────────────── */
+
+/* Hidden visually but still read by screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Centred, padded content column. Side padding respects landscape notches. */
+.container {
+  width: 100%;
+  max-width: calc(var(--container-lg) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: max(var(--gutter), var(--safe-left)) max(var(--gutter), var(--safe-right));
+}
+
+.container-md {
+  max-width: calc(var(--container-md) + 2 * var(--gutter));
+}
+
+.container-sm {
+  max-width: calc(var(--container-sm) + 2 * var(--gutter));
+}
+
+/* Page landmark that takes the remaining height, so footers sit at the bottom. */
+.page-main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-main:focus {
+  outline: none;
+}
+
+/* Simple centred page used by status screens (loading, not found, errors). */
+.status-page {
+  flex: 1 0 auto;
+  display: grid;
+  place-items: center;
+  padding: max(var(--space-8), var(--safe-top)) var(--gutter)
+    max(var(--space-8), var(--safe-bottom));
+}

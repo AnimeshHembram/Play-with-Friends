@@ -1,0 +1,78 @@
+.card {
+  position: relative;
+  container-type: inline-size;
+  min-width: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-subtle);
+}
+
+.raised {
+  box-shadow: var(--shadow-md);
+  border-color: transparent;
+}
+
+.outline {
+  background: transparent;
+}
+
+.pad-none {
+  padding: 0;
+}
+
+.pad-sm {
+  padding: var(--space-3);
+}
+
+.pad-md {
+  padding: clamp(var(--space-4), 3cqi, var(--space-6));
+}
+
+.pad-lg {
+  padding: clamp(var(--space-5), 5cqi, var(--space-10));
+}
+
+/* ── Whole-card click target ──────────────────────────────────────
+   The action inside the card stretches an invisible layer over the card,
+   so the entire card responds to a tap or click, while assistive technology
+   still sees one short link. */
+.interactive {
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+.interactive [data-card-action]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.interactive [data-card-action]:focus-visible {
+  outline: none;
+}
+
+.interactive:has([data-card-action]:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .interactive:hover {
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+.interactive:active {
+  transform: scale(0.99);
+}
+
+@media (forced-colors: active) {
+  .card {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,115 @@
+.main {
+  padding-top: var(--space-stack);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+  padding-bottom: var(--space-8);
+}
+
+.eyebrow {
+  color: var(--color-primary-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: var(--space-1);
+  font-size: var(--text-3xl);
+}
+
+.intro {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-stack);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.sectionTitle {
+  font-size: var(--text-xl);
+}
+
+.sectionDescription {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+/* Start button bar. Phones: pinned to the bottom, clear of the home indicator. */
+.actionBar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-toolbar);
+  margin-top: auto;
+  padding: var(--space-3) 0 calc(var(--space-3) + var(--safe-bottom));
+  background: color-mix(in srgb, var(--color-bg) 90%, transparent);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .actionBar {
+    backdrop-filter: blur(12px);
+  }
+}
+
+.actionInner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.reason {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.start {
+  width: 100%;
+}
+
+/* Wider screens: the bar becomes a normal row under the content. */
+@media (min-width: 40rem) {
+  .actionInner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-4);
+  }
+
+  .start {
+    width: auto;
+    min-width: 14rem;
+  }
+
+  .reason {
+    text-align: end;
+  }
+}
+
+/* Short landscape phones: keep the bar compact so content has room. */
+@media (max-height: 30rem) {
+  .actionBar {
+    position: static;
+  }
+}

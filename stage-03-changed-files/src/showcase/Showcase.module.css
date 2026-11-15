@@ -1,0 +1,161 @@
+.navRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  width: 100%;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.nav a[aria-current='page'] {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.page {
+  padding-block: var(--space-stack) var(--space-section);
+}
+
+.intro {
+  max-width: 44rem;
+  margin-bottom: var(--space-10);
+}
+
+.intro h1 {
+  font-size: var(--text-3xl);
+}
+
+.intro p {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+}
+
+.section {
+  padding-block: var(--space-8);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}
+
+.section > h2 {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-2xl);
+}
+
+.section > p {
+  max-width: 44rem;
+  margin-bottom: var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-4);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.swatchColor {
+  height: 4rem;
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--color-border-subtle);
+}
+
+.swatch code {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.typeSample {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.typeSample > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+}
+
+.typeSample code {
+  min-width: 8rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.demoStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.bigCard {
+  display: grid;
+  place-items: center;
+  /* Never taller than about half the visible screen (landscape phones). */
+  width: min(100%, 22rem, calc(40dvh * 1.4));
+  aspect-ratio: 1.4;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--color-tile-3);
+  color: var(--color-tile-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-heavy);
+  box-shadow: var(--shadow-lg);
+}
+
+.playerStrip > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.playerStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}

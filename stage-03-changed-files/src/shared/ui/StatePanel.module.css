@@ -1,0 +1,78 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: var(--container-sm);
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--state-soft, var(--color-surface-raised));
+  color: var(--state-fg, var(--color-text-muted));
+}
+
+.neutral {
+  --state-soft: var(--color-secondary-soft);
+  --state-fg: var(--color-secondary);
+}
+
+.info {
+  --state-soft: var(--color-surface-raised);
+  --state-fg: var(--color-text);
+}
+
+.error {
+  --state-soft: var(--color-danger-soft);
+  --state-fg: var(--color-danger);
+}
+
+.success {
+  --state-soft: var(--color-success-soft);
+  --state-fg: var(--color-success);
+}
+
+.title {
+  font-size: var(--text-2xl);
+}
+
+.body {
+  max-width: 34rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+}
+
+.body > * + * {
+  margin-top: var(--space-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* On the narrowest screens actions stack full width: easier to tap. */
+@media (max-width: 24rem) {
+  .actions {
+    flex-direction: column;
+    align-self: stretch;
+  }
+}
+
+.loadingText {
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}

@@ -1,0 +1,48 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
+  padding-inline-end: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand:hover {
+  text-decoration: none;
+}
+
+.mark {
+  flex-shrink: 0;
+}
+
+/* With very large text the wordmark truncates instead of pushing the header
+   wider than the screen; the link's accessible name stays complete. */
+.brand {
+  max-width: 100%;
+}
+
+.wordmark {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Below ~360px the wordmark would crowd the header actions. */
+@media (max-width: 22rem) {
+  .wordmark {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

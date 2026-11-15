@@ -1,0 +1,155 @@
+/* Stop the page behind an open modal from scrolling (no JavaScript needed). */
+:global(html:has(dialog[open])) {
+  overflow: hidden;
+}
+
+.dialog {
+  /* Bottom sheet by default (narrow screens). */
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100dvh - var(--space-6) - var(--safe-top));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.dialog::backdrop {
+  background: var(--color-overlay);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4) var(--space-3) max(var(--space-5), var(--safe-left));
+}
+
+.headings {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-xl);
+}
+
+.description {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.close {
+  margin-top: calc(-1 * var(--space-1));
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-2) max(var(--space-5), var(--safe-right)) var(--space-5)
+    max(var(--space-5), var(--safe-left));
+}
+
+.footer {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+  padding: var(--space-4) max(var(--space-5), var(--safe-right))
+    calc(var(--space-5) + var(--safe-bottom)) max(var(--space-5), var(--safe-left));
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}
+
+.footer > * {
+  width: 100%;
+}
+
+/* Wider screens: centred card, buttons side by side. */
+@media (min-width: 40rem) {
+  .dialog {
+    inset: 0;
+    margin: auto;
+    width: calc(100% - 2 * var(--gutter));
+    max-height: calc(100dvh - 2 * var(--space-8));
+    border-radius: var(--radius-xl);
+  }
+
+  .sm {
+    max-width: 28rem;
+  }
+
+  .md {
+    max-width: var(--container-sm);
+  }
+
+  .lg {
+    max-width: var(--container-md);
+  }
+
+  .footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding-bottom: var(--space-5);
+  }
+
+  .footer > * {
+    width: auto;
+  }
+}
+
+/* Short landscape phones: use almost the whole height. */
+@media (max-height: 30rem) {
+  .dialog {
+    max-height: calc(100dvh - var(--space-4));
+  }
+
+  .header {
+    padding-top: var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: sheet-in var(--duration-base) var(--ease-out);
+  }
+
+  @media (min-width: 40rem) {
+    .dialog[open] {
+      animation-name: pop-in;
+    }
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .dialog {
+    border: 2px solid CanvasText;
+  }
+}

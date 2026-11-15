@@ -1,0 +1,364 @@
+/* ── Header nav ──────────────────────────────────────────────── */
+.sectionNav {
+  display: none;
+  gap: var(--space-1);
+  margin-inline-end: var(--space-2);
+}
+
+.sectionNav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.sectionNav a:hover {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+
+/* Section shortcuts appear once there's room; on phones the page is short
+   enough to scroll, and the header keeps only the brand and Play button. */
+@media (min-width: 48rem) {
+  .sectionNav {
+    display: flex;
+  }
+}
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero {
+  padding-block: clamp(var(--space-8), 3rem + 4vw, var(--space-section));
+  overflow: clip;
+}
+
+.heroInner {
+  display: grid;
+  gap: clamp(var(--space-10), 6vw, var(--space-16));
+  align-items: center;
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.heroTitle {
+  font-size: var(--text-display);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.lead {
+  max-width: 36rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Phones: both buttons full width, primary on top — big, easy targets. */
+.ctaRow > * {
+  flex: 1 1 100%;
+}
+
+@media (min-width: 30rem) {
+  .ctaRow > * {
+    flex: 0 0 auto;
+  }
+}
+
+.cta {
+  min-width: 11rem;
+}
+
+.promises {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.promises li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.promises svg {
+  color: var(--color-secondary);
+}
+
+/* Decorative stack of cards. Sized in relation to its own column. */
+.heroArt {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 22rem);
+  aspect-ratio: 1.1;
+}
+
+.artCard {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 58%;
+  aspect-ratio: 0.72;
+  border-radius: var(--radius-xl);
+  color: var(--color-tile-ink);
+  box-shadow: var(--shadow-lg);
+}
+
+.artCardBack {
+  top: 6%;
+  left: 4%;
+  background: var(--color-tile-5);
+  transform: rotate(-14deg);
+}
+
+.artCardMid {
+  top: 2%;
+  left: 22%;
+  background: var(--color-tile-3);
+  transform: rotate(-2deg);
+}
+
+.artCardFront {
+  top: 12%;
+  right: 2%;
+  background: var(--color-tile-1);
+  transform: rotate(11deg);
+}
+
+.artCorner {
+  position: absolute;
+  top: 8%;
+  left: 12%;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.2rem + 2vw, 2.75rem);
+  font-weight: var(--weight-heavy);
+  line-height: 1;
+}
+
+/* Five-pip dice face. */
+.pips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 58%;
+  aspect-ratio: 1;
+}
+
+.pips span {
+  width: 72%;
+  aspect-ratio: 1;
+  margin: auto;
+  border-radius: 50%;
+  background: var(--color-tile-ink);
+}
+
+.pips span:nth-child(1) {
+  grid-area: 1 / 1;
+}
+
+.pips span:nth-child(2) {
+  grid-area: 1 / 3;
+}
+
+.pips span:nth-child(3) {
+  grid-area: 2 / 2;
+}
+
+.pips span:nth-child(4) {
+  grid-area: 3 / 1;
+}
+
+.pips span:nth-child(5) {
+  grid-area: 3 / 3;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heroArt:hover .artCardFront {
+    transform: rotate(16deg) translateY(-4%);
+  }
+
+  .artCard {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+}
+
+/* Wide enough for two columns: text left, art right. */
+@media (min-width: 56rem) {
+  .heroInner {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+
+  .heroArt {
+    width: min(100%, 28rem);
+  }
+}
+
+/* Short landscape phones: art takes too much height; keep it compact. */
+@media (orientation: landscape) and (max-height: 30rem) {
+  .heroInner {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+
+  .heroArt {
+    width: min(100%, 15rem);
+  }
+}
+
+/* ── Sections ────────────────────────────────────────────────── */
+.section {
+  padding-block: var(--space-section);
+}
+
+.sectionAlt {
+  background: var(--color-surface-sunken);
+  border-block: var(--border-width) solid var(--color-border-subtle);
+}
+
+.sectionHeading {
+  max-width: 40rem;
+  margin-bottom: clamp(var(--space-6), 4vw, var(--space-10));
+}
+
+.sectionHeading h2 {
+  font-size: var(--text-3xl);
+}
+
+.sectionHeading p {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+}
+
+.sectionCta {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(var(--space-6), 4vw, var(--space-10));
+}
+
+/* ── Steps ───────────────────────────────────────────────────── */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.step h3 {
+  margin-top: var(--space-4);
+  font-size: var(--text-xl);
+}
+
+.step p {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.stepNumber {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
+  font-family: var(--font-display);
+  font-weight: var(--weight-heavy);
+}
+
+/* ── Games preview ───────────────────────────────────────────── */
+.gameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: var(--space-3) var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.gameItem {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding-block: var(--space-3);
+}
+
+.gameText {
+  min-width: 0;
+}
+
+.gameTitle {
+  font-size: var(--text-lg);
+}
+
+.gameDescription {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+.gamePlayers {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+/* ── Modes ───────────────────────────────────────────────────── */
+.modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-4);
+}
+
+.modeIcon {
+  color: var(--color-primary-text);
+}
+
+.mode h3 {
+  margin-top: var(--space-4);
+  font-size: var(--text-xl);
+}
+
+.mode p {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+/* ── Final CTA ───────────────────────────────────────────────── */
+.final {
+  padding-block: var(--space-section);
+}
+
+.finalInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  text-align: center;
+}
+
+.finalInner h2 {
+  font-size: var(--text-3xl);
+}
