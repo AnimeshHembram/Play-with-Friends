@@ -149,8 +149,137 @@
           color var(--duration) var(--ease);
       }
 
+      /* The canvas centres its content in whatever space is left after the
+         menu button. If the content is taller than the screen, the page
+         scrolls vertically (auto margins never clip the top). */
       .canvas main {
         flex: 1 0 auto;
+        display: flex;
+        padding: calc(var(--tap-min) + var(--space-6) + var(--safe-top)) max(var(--space-4), var(--safe-right))
+          max(var(--space-6), calc(var(--safe-bottom) + var(--space-4))) max(var(--space-4), var(--safe-left));
+      }
+
+      /* ── Game selection card ─────────────────────────────────────── */
+      .game-card {
+        margin: auto;
+        width: 100%;
+        max-width: 28rem;
+        padding: clamp(var(--space-5), 1rem + 3vw, 2.5rem);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: clamp(1.25rem, 0.9rem + 1.5vw, 2rem);
+        background: var(--color-surface);
+        color: var(--color-text);
+        text-align: center;
+        transition:
+          background-color var(--duration) var(--ease),
+          border-color var(--duration) var(--ease);
+      }
+
+      .game-card h1 {
+        margin: 0 0 clamp(var(--space-5), 0.9rem + 1.5vw, var(--space-8));
+        font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        overflow-wrap: break-word;
+      }
+
+      .game-list {
+        display: grid;
+        gap: var(--space-3);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .game-option {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 3.25rem;
+        padding: var(--space-3) var(--space-4);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-size: 1.0625rem;
+        font-weight: 550;
+        line-height: 1.3;
+        text-align: center;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        transition:
+          background-color var(--duration) var(--ease),
+          border-color var(--duration) var(--ease),
+          color var(--duration) var(--ease),
+          transform 120ms var(--ease);
+      }
+
+      /* Hover only where a real pointer can hover (not on touch screens,
+         where hover styles would "stick" after a tap). */
+      @media (hover: hover) {
+        .game-option:hover {
+          border-color: var(--color-accent-strong);
+          background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+        }
+      }
+
+      .game-option:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 2px;
+        border-color: var(--color-accent-strong);
+      }
+
+      /* Pressed: filled with the accent; text switches to the colour that
+         reads on it (black or white, always ≥ 4.5:1). */
+      .game-option:active {
+        border-color: var(--color-accent);
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+        transform: scale(0.98);
+      }
+
+      /* Short landscape screens (phones on their side): two columns so all
+         seven games fit with little or no scrolling. The last one is centred. */
+      @media (orientation: landscape) and (max-height: 30rem) and (min-width: 36rem) {
+        .canvas main {
+          padding-top: max(var(--space-4), var(--safe-top));
+          padding-left: max(calc(var(--tap-min) + var(--space-6)), var(--safe-left));
+        }
+
+        .game-card {
+          max-width: 40rem;
+          padding: var(--space-5) var(--space-6);
+        }
+
+        .game-card h1 {
+          margin-bottom: var(--space-4);
+        }
+
+        .game-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: var(--space-2) var(--space-3);
+        }
+
+        .game-list li:last-child:nth-child(odd) {
+          grid-column: 1 / -1;
+          justify-self: center;
+          width: calc(50% - var(--space-3) / 2);
+        }
+
+        .game-option {
+          min-height: var(--tap-min);
+        }
+      }
+
+      @media (forced-colors: active) {
+        .game-card,
+        .game-option {
+          border: 1px solid CanvasText;
+        }
       }
 
       /* ── Hamburger ───────────────────────────────────────────────── */
@@ -601,7 +730,19 @@
       </button>
 
       <main>
-        <h1 class="visually-hidden">Play with Friends</h1>
+        <section class="game-card" aria-labelledby="game-card-title">
+          <h1 id="game-card-title">Choose Your Game</h1>
+          <!-- Visual selection controls for this stage: no gameplay or navigation yet. -->
+          <ul class="game-list" aria-label="Games">
+            <li><button type="button" class="game-option">Truth or Dare</button></li>
+            <li><button type="button" class="game-option">Never Have I Ever</button></li>
+            <li><button type="button" class="game-option">Who's Most Likely To?</button></li>
+            <li><button type="button" class="game-option">Random Picker</button></li>
+            <li><button type="button" class="game-option">Dumb Charades</button></li>
+            <li><button type="button" class="game-option">Rolling Dice</button></li>
+            <li><button type="button" class="game-option">Pick a Card</button></li>
+          </ul>
+        </section>
       </main>
     </div>
 
