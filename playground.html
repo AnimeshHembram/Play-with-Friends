@@ -121,6 +121,10 @@
         overflow: hidden; /* page behind the menu doesn't scroll */
       }
 
+      [hidden] {
+        display: none !important;
+      }
+
       .visually-hidden {
         position: absolute;
         width: 1px;
@@ -279,6 +283,248 @@
         .game-card,
         .game-option {
           border: 1px solid CanvasText;
+        }
+      }
+
+      /* ── Truth or Dare screen ────────────────────────────────────── */
+      .tod {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin: auto;
+        gap: clamp(var(--space-4), 2.5vh, var(--space-6));
+      }
+
+      /* Back button: sits beside the fixed menu button, same height. */
+      .back-button {
+        position: fixed;
+        top: max(var(--space-3), calc(var(--safe-top) + var(--space-2)));
+        left: max(calc(var(--space-3) + var(--tap-min) + var(--space-2)), calc(var(--safe-left) + var(--space-2) + var(--tap-min) + var(--space-2)));
+        z-index: 10;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        min-height: var(--tap-min);
+        padding: 0 var(--space-4) 0 var(--space-3);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 999px;
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-weight: 550;
+        cursor: pointer;
+        transition:
+          background-color var(--duration) var(--ease),
+          border-color var(--duration) var(--ease),
+          transform var(--duration) var(--ease);
+      }
+
+      @media (hover: hover) {
+        .back-button:hover {
+          border-color: var(--color-border);
+        }
+      }
+
+      .back-button:active {
+        transform: scale(0.97);
+      }
+
+      @media (min-width: 64rem) {
+        .back-button {
+          top: max(var(--space-4), calc(var(--safe-top) + var(--space-2)));
+          left: max(calc(var(--space-4) + var(--tap-min) + var(--space-2)), calc(var(--safe-left) + var(--space-2) + var(--tap-min) + var(--space-2)));
+        }
+      }
+
+      .tod h1 {
+        margin: 0;
+        font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.875rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        text-align: center;
+      }
+
+      .flip-cards {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(var(--space-4), 2.5vh, var(--space-6));
+        width: 100%;
+      }
+
+      /* One flip card. Based on the reference: perspective on the card,
+         preserve-3d on the inner layer, two faces with hidden backs, and a
+         180° turn around the vertical axis. It's a real <button>, so it
+         works with touch, mouse and keyboard (Enter / Space). */
+      .flip-card {
+        /* Two cards stacked must fit the visible height on most screens. */
+        --card-h: clamp(9rem, calc((100dvh - 15rem) / 2), 17rem);
+        position: relative;
+        display: block;
+        width: min(100%, 26rem);
+        height: var(--card-h);
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-lg);
+        background: none;
+        color: inherit;
+        cursor: pointer;
+        perspective: 1000px;
+        -webkit-tap-highlight-color: transparent;
+        container-type: size;
+      }
+
+      .flip-card:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 4px;
+      }
+
+      .flip-inner {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+        transition: transform 600ms cubic-bezier(0.3, 0.7, 0.2, 1);
+      }
+
+      .flip-card[aria-pressed='true'] .flip-inner {
+        transform: rotateY(180deg);
+      }
+
+      @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+        .flip-card:hover .flip-inner {
+          translate: 0 -2px;
+        }
+      }
+
+      .flip-card:active .flip-inner {
+        scale: 0.985;
+      }
+
+      .face {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: var(--space-4);
+        border: 1px solid transparent;
+        border-radius: var(--radius-lg);
+        text-align: center;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        transition:
+          background-color var(--duration) var(--ease),
+          color var(--duration) var(--ease),
+          border-color var(--duration) var(--ease);
+      }
+
+      .face-back {
+        transform: rotateY(180deg);
+      }
+
+      .face-word {
+        font-size: clamp(2rem, 22cqh, 3.75rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0.08em;
+      }
+
+      .face-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .face-text {
+        max-width: 18rem;
+        font-size: clamp(1rem, 0.9rem + 1cqh, 1.25rem);
+        font-weight: 550;
+        line-height: 1.35;
+      }
+
+      .face-hint {
+        font-size: 0.8125rem;
+        opacity: 0.85;
+      }
+
+      /* Truth: filled with the accent colour. */
+      .truth .face-front {
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+      }
+
+      /* Dare: the inverse of the page (dark card in light themes, light card
+         in dark themes) so it is clearly different from Truth with any accent. */
+      .dare .face-front {
+        background: var(--color-text);
+        color: var(--color-bg);
+      }
+
+      /* Backs: quiet surface with a coloured edge matching the front. */
+      .face-back {
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-width: 2px;
+      }
+
+      .truth .face-back {
+        border-color: var(--color-accent-strong);
+      }
+
+      .dare .face-back {
+        border-color: var(--color-text);
+      }
+
+      .face-back .face-label {
+        color: var(--color-text-muted);
+      }
+
+      /* The Truth or Dare screen always keeps room above it for the fixed
+         menu and Back buttons (the landscape game-list layout trims it). */
+      .canvas main:has(.tod:not([hidden])) {
+        padding-top: calc(var(--tap-min) + var(--space-5) + var(--safe-top));
+        padding-left: max(var(--space-4), var(--safe-left));
+      }
+
+      /* Short landscape screens: tighter spacing, smaller title, so both
+         stacked cards fit without scrolling where possible. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .tod {
+          gap: var(--space-3);
+        }
+
+        .tod h1 {
+          font-size: 1.125rem;
+        }
+
+        .flip-cards {
+          gap: var(--space-3);
+        }
+
+        .flip-card {
+          --card-h: max(7.5rem, calc((100dvh - 9.5rem) / 2));
+          width: min(100%, 30rem);
+        }
+
+        .face-hint {
+          display: none;
+        }
+      }
+
+      /* Reduced motion: the card changes face instantly instead of turning. */
+      @media (prefers-reduced-motion: reduce) {
+        .flip-inner {
+          transition: none;
+        }
+      }
+
+      @media (forced-colors: active) {
+        .face {
+          border: 2px solid CanvasText;
         }
       }
 
@@ -734,7 +980,7 @@
           <h1 id="game-card-title">Choose Your Game</h1>
           <!-- Visual selection controls for this stage: no gameplay or navigation yet. -->
           <ul class="game-list" aria-label="Games">
-            <li><button type="button" class="game-option">Truth or Dare</button></li>
+            <li><button type="button" class="game-option" data-game="truth-or-dare">Truth or Dare</button></li>
             <li><button type="button" class="game-option">Never Have I Ever</button></li>
             <li><button type="button" class="game-option">Who's Most Likely To?</button></li>
             <li><button type="button" class="game-option">Random Picker</button></li>
@@ -742,6 +988,46 @@
             <li><button type="button" class="game-option">Rolling Dice</button></li>
             <li><button type="button" class="game-option">Pick a Card</button></li>
           </ul>
+        </section>
+
+        <!-- Truth or Dare screen (UI prototype: no questions or game logic yet). -->
+        <section class="tod" id="truth-or-dare" aria-labelledby="tod-title" hidden>
+          <button type="button" class="back-button" id="back-button">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path d="M19 12H5m0 0 6-6m-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Back
+          </button>
+
+          <h1 id="tod-title" tabindex="-1">Truth or Dare</h1>
+
+          <div class="flip-cards">
+            <button type="button" class="flip-card truth" aria-pressed="false" aria-label="Truth card" data-card="truth">
+              <span class="flip-inner">
+                <span class="face face-front">
+                  <span class="face-word">TRUTH</span>
+                  <span class="face-hint">Tap to flip</span>
+                </span>
+                <span class="face face-back" aria-hidden="true">
+                  <span class="face-label">Truth</span>
+                  <span class="face-text">Your truth question will appear here.</span>
+                </span>
+              </span>
+            </button>
+
+            <button type="button" class="flip-card dare" aria-pressed="false" aria-label="Dare card" data-card="dare">
+              <span class="flip-inner">
+                <span class="face face-front">
+                  <span class="face-word">DARE</span>
+                  <span class="face-hint">Tap to flip</span>
+                </span>
+                <span class="face face-back" aria-hidden="true">
+                  <span class="face-label">Dare</span>
+                  <span class="face-text">Your dare will appear here.</span>
+                </span>
+              </span>
+            </button>
+          </div>
         </section>
       </main>
     </div>
@@ -1044,6 +1330,57 @@
         menuButton.focus();
       });
 
+      /* ── Screens: game selection ⇄ Truth or Dare ──────────────────
+         The URL hash records the screen (#truth-or-dare), so the browser's
+         own Back button works too. Works when opened from disk (file://). */
+      const selectionView = document.querySelector('.game-card');
+      const todView = document.getElementById('truth-or-dare');
+      const todOption = document.querySelector('[data-game="truth-or-dare"]');
+      const flipCards = [...document.querySelectorAll('.flip-card')];
+      const BASE_TITLE = document.title;
+
+      function setFlipped(card, flipped) {
+        card.setAttribute('aria-pressed', String(flipped));
+        // Only the visible face is exposed to screen readers.
+        card.querySelector('.face-front').setAttribute('aria-hidden', String(flipped));
+        card.querySelector('.face-back').setAttribute('aria-hidden', String(!flipped));
+      }
+
+      function showScreen(fromNavigation) {
+        const onTod = location.hash === '#truth-or-dare';
+        selectionView.hidden = onTod;
+        todView.hidden = !onTod;
+        document.title = onTod ? 'Truth or Dare — ' + BASE_TITLE : BASE_TITLE;
+        if (onTod) {
+          flipCards.forEach((card) => setFlipped(card, false)); // always start face up
+          if (fromNavigation) document.getElementById('tod-title').focus();
+        } else if (fromNavigation) {
+          todOption.focus();
+        }
+      }
+
+      todOption.addEventListener('click', () => {
+        location.hash = 'truth-or-dare';
+      });
+
+      document.getElementById('back-button').addEventListener('click', () => {
+        // Return to the selection screen. Prefer stepping back in history so
+        // the browser's Back/Forward stay in sync; otherwise clear the hash.
+        if (history.state && history.state.fromSelection) history.back();
+        else location.hash = '';
+      });
+
+      window.addEventListener('hashchange', () => {
+        if (location.hash === '#truth-or-dare') history.replaceState({ fromSelection: true }, '');
+        showScreen(true);
+      });
+
+      // Each card flips on its own, back and forth.
+      for (const card of flipCards) {
+        card.addEventListener('click', () => setFlipped(card, card.getAttribute('aria-pressed') !== 'true'));
+      }
+
+      showScreen(false);
       apply();
     </script>
   </body>
