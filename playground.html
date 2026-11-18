@@ -351,37 +351,90 @@
         gap: clamp(var(--space-4), 2.5vh, var(--space-6));
       }
 
-      /* Back button: sits beside the fixed menu button, same height. */
+      /* Back: just the left arrow, beside the gear, same height and spacing.
+         Like the gear, it has no visible container: the button is an
+         invisible, square 44×44 px hit area, with the same focus ring. */
       .back-button {
         position: fixed;
         top: max(var(--space-3), calc(var(--safe-top) + var(--space-2)));
         left: max(calc(var(--space-3) + var(--tap-min) + var(--space-2)), calc(var(--safe-left) + var(--space-2) + var(--tap-min) + var(--space-2)));
         z-index: 10;
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-        min-height: var(--tap-min);
-        padding: 0 var(--space-4) 0 var(--space-3);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: 999px;
-        background: var(--color-surface);
+        display: grid;
+        place-items: center;
+        width: var(--tap-min);
+        height: var(--tap-min);
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
         color: var(--color-text);
-        font-weight: 550;
         cursor: pointer;
         transition:
-          background-color var(--duration) var(--ease),
-          border-color var(--duration) var(--ease),
+          color var(--duration) var(--ease),
           transform var(--duration) var(--ease);
+      }
+
+      /* Hover / keyboard focus: the arrow takes the accent colour and nudges
+         left, hinting where it goes. Only `transform` moves (GPU-friendly). */
+      .back-icon {
+        transition: transform 200ms var(--ease);
       }
 
       @media (hover: hover) {
         .back-button:hover {
-          border-color: var(--color-border);
+          color: var(--color-accent-strong);
+        }
+
+        .back-button:hover .back-icon {
+          transform: translateX(-3px);
         }
       }
 
+      .back-button:focus-visible {
+        color: var(--color-accent-strong);
+      }
+
+      /* Keyboard focus ring for the gear and the arrow, drawn as an overlay
+         that ignores the pointer. (Rounding the button itself would make its
+         corners unclickable; an overlay keeps the full square hit area.) */
+      .settings-button:focus-visible,
+      .back-button:focus-visible {
+        outline: none;
+      }
+
+      .settings-button:focus-visible::after,
+      .back-button:focus-visible::after {
+        content: '';
+        position: absolute;
+        inset: -5px;
+        border: 3px solid var(--color-accent-strong);
+        border-radius: calc(var(--radius-md) + 5px);
+        pointer-events: none;
+      }
+
+      @media (forced-colors: active) {
+        .settings-button:focus-visible::after,
+        .back-button:focus-visible::after {
+          border-color: Highlight;
+        }
+      }
+
+      .back-button:focus-visible .back-icon {
+        transform: translateX(-3px);
+      }
+
       .back-button:active {
-        transform: scale(0.97);
+        transform: scale(0.92);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .back-button .back-icon,
+        .back-button:hover .back-icon,
+        .back-button:focus-visible .back-icon {
+          transform: none;
+          transition: none;
+        }
       }
 
       @media (min-width: 64rem) {
@@ -594,11 +647,11 @@
         width: var(--tap-min);
         height: var(--tap-min);
         /* No visible container: just the gear on the page. The button keeps
-           its full 44×44 px as an invisible hit area, and its rounded corners
-           only shape the keyboard focus ring. */
+           its full 44×44 px as an invisible, square hit area; the keyboard
+           focus ring is drawn separately (see below). */
         padding: 0;
         border: 0;
-        border-radius: var(--radius-md);
+        border-radius: 0;
         background: transparent;
         box-shadow: none;
         color: var(--color-text);
@@ -1085,11 +1138,10 @@
 
         <!-- Truth or Dare screen (UI prototype: no questions or game logic yet). -->
         <section class="tod" id="truth-or-dare" aria-labelledby="tod-title" hidden>
-          <button type="button" class="back-button" id="back-button">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+          <button type="button" class="back-button" id="back-button" aria-label="Back to games">
+            <svg class="back-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
               <path d="M19 12H5m0 0 6-6m-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            Back
           </button>
 
           <h1 id="tod-title" tabindex="-1">Truth or Dare</h1>
