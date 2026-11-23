@@ -1840,6 +1840,58 @@
         margin: 0;
       }
 
+      /* Random Number: the picked number, sized to fit any length. */
+      .rp-stage:has(.rp-result:not([hidden])) {
+        container-type: inline-size;
+        border: 3px solid var(--color-text);
+        background: var(--color-surface);
+        box-shadow: 4px 4px 0 var(--color-text);
+        color: var(--color-text);
+      }
+
+      .rp-result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+      }
+
+      .rp-number {
+        --len: 2; /* characters shown; set by the script */
+        font-size: min(7rem, 22dvh, calc(140cqi / var(--len)));
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .rp-stage[data-rolling] .rp-number {
+        color: var(--color-text-muted);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .rp-stage[data-landed] .rp-number {
+          animation: rp-land 280ms var(--ease);
+        }
+      }
+
+      @keyframes rp-land {
+        from {
+          transform: scale(1.18);
+        }
+      }
+
+      .rp-range {
+        color: var(--color-text-muted);
+        font-size: 0.9375rem;
+        font-weight: 650;
+      }
+
+      .rp-game .roll-button[aria-disabled='true'] {
+        cursor: progress;
+      }
+
       @media (orientation: landscape) and (max-height: 30rem) {
         .rp-game {
           gap: var(--space-3);
@@ -1848,7 +1900,8 @@
           font-size: 1.25rem;
         }
         .rp-stage {
-          min-height: 8rem;
+          min-height: 6.5rem;
+          padding: var(--space-3) var(--space-5);
         }
         .mode-picker form {
           gap: var(--space-4);
@@ -2058,9 +2111,17 @@
         <section class="rp-game" id="random-picker" aria-labelledby="rp-title" hidden>
           <p class="rp-eyebrow">Random Picker</p>
           <h1 id="rp-title" tabindex="-1">Card</h1>
-          <div class="rp-stage">
+          <div class="rp-stage" id="rp-stage">
             <p id="rp-placeholder">Your card picker will appear here.</p>
+            <div class="rp-result" id="rp-result" hidden>
+              <span class="rp-number" id="rp-number" aria-hidden="true"></span>
+              <span class="rp-range" id="rp-range"></span>
+            </div>
           </div>
+          <p class="visually-hidden" id="rp-announcer" role="status" aria-live="polite"></p>
+          <button type="button" class="action-button roll-button" id="rp-press" hidden>
+            Pick again
+          </button>
         </section>
       </main>
     </div>
@@ -2244,7 +2305,7 @@
           </div>
         </div>
 
-        <p class="picker-hint" id="range-picker-hint">Choose a range to continue.</p>
+        <p class="picker-hint" id="range-picker-hint">Choose a range, then tap PRESS.</p>
 
         <div class="picker-actions">
           <button type="button" class="text-button" id="range-picker-back">Back</button>
@@ -2255,7 +2316,7 @@
             disabled
             aria-describedby="range-picker-hint"
           >
-            Continue
+            PRESS
           </button>
         </div>
       </form>
@@ -2955,6 +3016,13 @@
         const pickerHint = document.getElementById('mode-picker-hint');
         const title = document.getElementById('rp-title');
         const placeholder = document.getElementById('rp-placeholder');
+        const stage = document.getElementById('rp-stage');
+        const resultBox = document.getElementById('rp-result');
+        const numberEl = document.getElementById('rp-number');
+        const rangeEl = document.getElementById('rp-range');
+        const announcer = document.getElementById('rp-announcer');
+        const pressButton = document.getElementById('rp-press');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
         const radios = [...pickerForm.elements['picker-mode']];
 
         const MODES = {
@@ -3017,9 +3085,10 @@
         const maxInput = document.getElementById('range-max');
         const rangeContinue = document.getElementById('range-picker-continue');
         const rangeHint = document.getElementById('range-picker-hint');
-        const RANGE_HINT = 'Choose a range to continue.';
+        const RANGE_HINT = 'Choose a range, then tap PRESS.';
         const MAX_HINT = 'Enter a whole number from 2 to ' + MAX_LIMIT.toLocaleString() + '.';
         let lastMax = null; // remembered for the next time the popup opens (this tab only)
+        let rollOnArrival = false; // set by PRESS: roll the first number as the screen opens
 
         /** A valid top number for "1 to X", or null. */
         function parseMax(text) {
@@ -3091,8 +3160,82 @@
           }
           lastMax = max;
           rangePicker.close();
+          rollOnArrival = true;
           navigate('random-picker', 'number/' + max);
         });
+
+        /* ── Random Number: the game ──────────────────────────────────── */
+        const game = { max: 0, rolling: false, token: 0 }; // token: a stale roll can't land
+
+        /* Fair random integer 1–max: crypto generator with rejection
+           sampling, so every number is equally likely (no modulo bias). */
+        function randomUpTo(max) {
+          const buffer = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= limit);
+          return (buffer[0] % max) + 1;
+        }
+
+        function showNumber(n) {
+          const text = n.toLocaleString();
+          numberEl.textContent = text;
+          numberEl.style.setProperty('--len', String(Math.max(2, text.length)));
+        }
+
+        function resetNumberGame(max) {
+          game.token++;
+          game.rolling = false;
+          game.max = max;
+          stage.removeAttribute('data-rolling');
+          stage.removeAttribute('data-landed');
+          resultBox.hidden = true;
+          placeholder.hidden = false;
+          placeholder.textContent =
+            'Tap Pick a number to choose from 1 to ' + max.toLocaleString() + '.';
+          pressButton.textContent = 'Pick a number';
+          rangeEl.textContent = 'from 1 to ' + max.toLocaleString();
+          announcer.textContent = '';
+          pressButton.removeAttribute('aria-disabled');
+        }
+
+        function press() {
+          if (game.rolling || !game.max) return;
+          const token = ++game.token;
+          const final = randomUpTo(game.max);
+          const land = () => {
+            if (token !== game.token) return;
+            game.rolling = false;
+            stage.removeAttribute('data-rolling');
+            showNumber(final);
+            stage.removeAttribute('data-landed');
+            void stage.offsetWidth; // restart the landing pop
+            stage.setAttribute('data-landed', '');
+            pressButton.removeAttribute('aria-disabled');
+            announcer.textContent = 'You got ' + final.toLocaleString() + '.';
+            pressButton.textContent = 'Pick again';
+          };
+          placeholder.hidden = true;
+          resultBox.hidden = false;
+          announcer.textContent = '';
+          if (reducedMotion.matches) return land();
+          // A short "shuffle" through random numbers, slowing down, then land.
+          game.rolling = true;
+          pressButton.setAttribute('aria-disabled', 'true');
+          stage.setAttribute('data-rolling', '');
+          stage.removeAttribute('data-landed');
+          const delays = [40, 40, 45, 50, 55, 60, 70, 80, 95, 115, 140];
+          let i = 0;
+          const tick = () => {
+            if (token !== game.token) return;
+            if (i === delays.length) return land();
+            showNumber(randomUpTo(game.max));
+            setTimeout(tick, delays[i++]);
+          };
+          tick();
+        }
+
+        pressButton.addEventListener('click', press);
 
         /** Splits a route param such as number/50 into { mode, max }. */
         function parseParam(param) {
@@ -3117,15 +3260,23 @@
             const route = parseParam(param);
             const mode = MODES[route.mode];
             title.textContent = mode.name;
-            placeholder.textContent =
-              route.mode === 'number'
-                ? 'Your random number from 1 to ' +
-                  route.max.toLocaleString() +
-                  ' will appear here.'
-                : mode.placeholder;
+            const isNumber = route.mode === 'number';
+            pressButton.hidden = !isNumber;
+            if (isNumber) {
+              resetNumberGame(route.max);
+              if (rollOnArrival) press(); // PRESS in the popup starts the game
+            } else {
+              resetNumberGame(0);
+              placeholder.textContent = mode.placeholder;
+            }
+            rollOnArrival = false;
             lastChoice = route.mode;
             if (route.max) lastMax = route.max;
             if (fromNavigation) title.focus();
+          },
+          leave() {
+            game.token++; // stop a roll that is still running
+            game.rolling = false;
           },
         });
       })();
