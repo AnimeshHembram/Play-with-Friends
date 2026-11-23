@@ -1729,6 +1729,50 @@
         outline-offset: 5px;
       }
 
+      /* Random Number: range popup. Always two tiles side by side. */
+      .mode-options.range-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .range-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .range-field label {
+        font-weight: 650;
+      }
+
+      .range-input-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        font-size: 1.125rem;
+        font-weight: 700;
+      }
+
+      .range-input-row input {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-3);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+      }
+
+      .range-input-row input:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      .range-input-row input[aria-invalid='true'] {
+        border-style: dashed;
+      }
+
       @media (forced-colors: active) {
         .mode-picker,
         .mode-options .count-option,
@@ -1814,6 +1858,30 @@
         .mode-options {
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: var(--space-3);
+        }
+        .mode-options.range-options {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #range-picker form {
+          gap: var(--space-3);
+          padding-block: var(--space-3);
+        }
+        .range-options .count-option {
+          min-height: var(--tap-min);
+          font-size: 1rem;
+        }
+        /* Short screens: the tile labels say it all; drop the big icons
+           and the visible field label (it stays for screen readers). */
+        .range-options .mode-icon {
+          display: none;
+        }
+        .range-field label {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
         }
         /* Narrow tiles: the accent fill alone marks the choice. */
         .mode-options .count-option:has(input:checked)::after {
@@ -2121,6 +2189,71 @@
             id="mode-picker-continue"
             disabled
             aria-describedby="mode-picker-hint"
+          >
+            Continue
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Random Number: which range? -->
+    <dialog class="mode-picker" id="range-picker" aria-labelledby="range-picker-title">
+      <form method="dialog" id="range-picker-form" novalidate>
+        <div class="picker-header">
+          <h2 id="range-picker-title">Choose a range</h2>
+          <button type="button" class="icon-button" id="range-picker-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="count-options mode-options range-options">
+          <legend class="visually-hidden">Number range</legend>
+          <label class="count-option">
+            <input type="radio" name="number-range" value="ten" />
+            <span class="mode-icon" aria-hidden="true">1–10</span>
+            <span>1 to 10</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="number-range" value="custom" />
+            <span class="mode-icon" aria-hidden="true">1–X</span>
+            <span>1 to X</span>
+          </label>
+        </fieldset>
+
+        <div class="range-field" id="range-field" hidden>
+          <label for="range-max">Pick a number from 1 to…</label>
+          <div class="range-input-row">
+            <span aria-hidden="true">1 to</span>
+            <input
+              type="text"
+              id="range-max"
+              inputmode="numeric"
+              autocomplete="off"
+              enterkeyhint="go"
+              maxlength="9"
+              placeholder="e.g. 50"
+              aria-describedby="range-picker-hint"
+            />
+          </div>
+        </div>
+
+        <p class="picker-hint" id="range-picker-hint">Choose a range to continue.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="range-picker-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="range-picker-continue"
+            disabled
+            aria-describedby="range-picker-hint"
           >
             Continue
           </button>
@@ -2483,7 +2616,8 @@
       }
 
       function currentRoute() {
-        const [id, param = ''] = location.hash.slice(1).split('/');
+        const [id, ...rest] = location.hash.slice(1).split('/');
+        const param = rest.join('/'); // e.g. 2, or number/50 (Random Number's range)
         const screen = screens.get(id);
         return screen && (!screen.accepts || screen.accepts(param)) ? { screen, param } : null;
       }
@@ -2870,8 +3004,105 @@
           if (!chosen) return;
           lastChoice = chosen.value;
           picker.close();
-          navigate('random-picker', chosen.value);
+          if (chosen.value === 'number') openRange();
+          else navigate('random-picker', chosen.value);
         });
+
+        /* ── Random Number: range popup (1 to 10, or 1 to X) ─────────── */
+        const MAX_LIMIT = 1000000;
+        const rangePicker = document.getElementById('range-picker');
+        const rangeForm = document.getElementById('range-picker-form');
+        const rangeRadios = [...rangeForm.elements['number-range']];
+        const rangeField = document.getElementById('range-field');
+        const maxInput = document.getElementById('range-max');
+        const rangeContinue = document.getElementById('range-picker-continue');
+        const rangeHint = document.getElementById('range-picker-hint');
+        const RANGE_HINT = 'Choose a range to continue.';
+        const MAX_HINT = 'Enter a whole number from 2 to ' + MAX_LIMIT.toLocaleString() + '.';
+        let lastMax = null; // remembered for the next time the popup opens (this tab only)
+
+        /** A valid top number for "1 to X", or null. */
+        function parseMax(text) {
+          const clean = text.trim().replace(/[\s,]/g, '');
+          if (!/^\d+$/.test(clean)) return null;
+          const n = Number(clean);
+          return n >= 2 && n <= MAX_LIMIT ? n : null;
+        }
+
+        function chosenMax() {
+          const range = rangeRadios.find((r) => r.checked)?.value;
+          if (range === 'ten') return 10;
+          if (range === 'custom') return parseMax(maxInput.value);
+          return null;
+        }
+
+        function syncRange() {
+          const range = rangeRadios.find((r) => r.checked)?.value;
+          const max = chosenMax();
+          rangeField.hidden = range !== 'custom';
+          rangeContinue.disabled = max === null;
+          const typedBad = range === 'custom' && maxInput.value.trim() !== '' && max === null;
+          maxInput.setAttribute('aria-invalid', String(typedBad));
+          rangeHint.textContent = range === 'custom' ? MAX_HINT : RANGE_HINT;
+          rangeHint.hidden = max !== null;
+        }
+
+        function openRange() {
+          const custom = lastMax !== null && lastMax !== 10;
+          rangeRadios.forEach(
+            (r) => (r.checked = lastMax !== null && r.value === (custom ? 'custom' : 'ten')),
+          );
+          maxInput.value = custom ? String(lastMax) : '';
+          syncRange();
+          rangePicker.showModal();
+          (rangeRadios.find((r) => r.checked) || rangeRadios[0]).focus();
+        }
+
+        function closeRange() {
+          rangePicker.close();
+          option.focus();
+        }
+
+        rangeRadios.forEach((r) =>
+          r.addEventListener('change', () => {
+            syncRange();
+            if (r.value === 'custom' && r.checked) maxInput.focus();
+          }),
+        );
+        maxInput.addEventListener('input', syncRange);
+        document.getElementById('range-picker-close').addEventListener('click', closeRange);
+        document.getElementById('range-picker-back').addEventListener('click', () => {
+          rangePicker.close();
+          openPicker(); // back to "Choose a picker", Random Number still selected
+        });
+        rangePicker.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeRange();
+        });
+        rangePicker.addEventListener('click', (event) => {
+          if (event.target === rangePicker) closeRange(); // backdrop
+        });
+        rangeForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const max = chosenMax();
+          if (max === null) {
+            if (rangeRadios.some((r) => r.checked)) maxInput.focus();
+            return;
+          }
+          lastMax = max;
+          rangePicker.close();
+          navigate('random-picker', 'number/' + max);
+        });
+
+        /** Splits a route param such as number/50 into { mode, max }. */
+        function parseParam(param) {
+          const [mode, extra] = param.split('/');
+          if (mode === 'number') {
+            const max = extra !== undefined && /^\d+$/.test(extra) ? parseMax(extra) : null;
+            return max === null ? null : { mode, max };
+          }
+          return Object.hasOwn(MODES, mode) && extra === undefined ? { mode } : null;
+        }
 
         registerScreen('random-picker', {
           view: document.getElementById('random-picker'),
@@ -2881,12 +3112,19 @@
             const mode = MODES[location.hash.slice(1).split('/')[1]];
             return mode ? mode.name : 'Random Picker';
           },
-          accepts: (param) => Object.hasOwn(MODES, param),
+          accepts: (param) => parseParam(param) !== null,
           enter(param, fromNavigation) {
-            const mode = MODES[param];
+            const route = parseParam(param);
+            const mode = MODES[route.mode];
             title.textContent = mode.name;
-            placeholder.textContent = mode.placeholder;
-            lastChoice = param;
+            placeholder.textContent =
+              route.mode === 'number'
+                ? 'Your random number from 1 to ' +
+                  route.max.toLocaleString() +
+                  ' will appear here.'
+                : mode.placeholder;
+            lastChoice = route.mode;
+            if (route.max) lastMax = route.max;
             if (fromNavigation) title.focus();
           },
         });
