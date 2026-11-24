@@ -3073,7 +3073,10 @@
           lastChoice = chosen.value;
           picker.close();
           if (chosen.value === 'number') openRange();
-          else navigate('random-picker', chosen.value);
+          else {
+            rollOnArrival = chosen.value === 'alphabet'; // a letter appears straight away
+            navigate('random-picker', chosen.value);
+          }
         });
 
         /* ── Random Number: range popup (1 to 10, or 1 to X) ─────────── */
@@ -3164,8 +3167,22 @@
           navigate('random-picker', 'number/' + max);
         });
 
-        /* ── Random Number: the game ──────────────────────────────────── */
-        const game = { max: 0, rolling: false, token: 0 }; // token: a stale roll can't land
+        /* ── Random Number & Random Alphabet: the game ──────────────────
+           Both pick a fair random index 1–max; the alphabet shows it as
+           a letter (1 = A … 26 = Z). */
+        const game = { kind: 'number', max: 0, rolling: false, token: 0 }; // token: a stale roll can't land
+        const KINDS = {
+          number: {
+            format: (n) => n.toLocaleString(),
+            noun: 'number',
+            range: (max) => 'from 1 to ' + max.toLocaleString(),
+          },
+          alphabet: {
+            format: (n) => String.fromCharCode(64 + n),
+            noun: 'letter',
+            range: () => 'from A to Z',
+          },
+        };
 
         /* Fair random integer 1–max: crypto generator with rejection
            sampling, so every number is equally likely (no modulo bias). */
@@ -3178,23 +3195,24 @@
         }
 
         function showNumber(n) {
-          const text = n.toLocaleString();
+          const text = KINDS[game.kind].format(n);
           numberEl.textContent = text;
           numberEl.style.setProperty('--len', String(Math.max(2, text.length)));
         }
 
-        function resetNumberGame(max) {
+        function resetNumberGame(max, kind = 'number') {
+          const k = KINDS[kind];
           game.token++;
           game.rolling = false;
+          game.kind = kind;
           game.max = max;
           stage.removeAttribute('data-rolling');
           stage.removeAttribute('data-landed');
           resultBox.hidden = true;
           placeholder.hidden = false;
-          placeholder.textContent =
-            'Tap Pick a number to choose from 1 to ' + max.toLocaleString() + '.';
-          pressButton.textContent = 'Pick a number';
-          rangeEl.textContent = 'from 1 to ' + max.toLocaleString();
+          placeholder.textContent = 'Tap Pick a ' + k.noun + ' to choose ' + k.range(max) + '.';
+          pressButton.textContent = 'Pick a ' + k.noun;
+          rangeEl.textContent = k.range(max);
           announcer.textContent = '';
           pressButton.removeAttribute('aria-disabled');
         }
@@ -3212,14 +3230,14 @@
             void stage.offsetWidth; // restart the landing pop
             stage.setAttribute('data-landed', '');
             pressButton.removeAttribute('aria-disabled');
-            announcer.textContent = 'You got ' + final.toLocaleString() + '.';
+            announcer.textContent = 'You got ' + KINDS[game.kind].format(final) + '.';
             pressButton.textContent = 'Pick again';
           };
           placeholder.hidden = true;
           resultBox.hidden = false;
           announcer.textContent = '';
           if (reducedMotion.matches) return land();
-          // A short "shuffle" through random numbers, slowing down, then land.
+          // A short "shuffle" through random values, slowing down, then land.
           game.rolling = true;
           pressButton.setAttribute('aria-disabled', 'true');
           stage.setAttribute('data-rolling', '');
@@ -3260,11 +3278,12 @@
             const route = parseParam(param);
             const mode = MODES[route.mode];
             title.textContent = mode.name;
-            const isNumber = route.mode === 'number';
-            pressButton.hidden = !isNumber;
-            if (isNumber) {
-              resetNumberGame(route.max);
-              if (rollOnArrival) press(); // PRESS in the popup starts the game
+            const playable = route.mode === 'number' || route.mode === 'alphabet';
+            pressButton.hidden = !playable;
+            if (playable) {
+              if (route.mode === 'number') resetNumberGame(route.max);
+              else resetNumberGame(26, 'alphabet');
+              if (rollOnArrival) press(); // started from the popup: roll straight away
             } else {
               resetNumberGame(0);
               placeholder.textContent = mode.placeholder;
