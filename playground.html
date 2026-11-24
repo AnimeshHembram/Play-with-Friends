@@ -1672,7 +1672,8 @@
       }
 
       .mode-options .count-option,
-      .mode-picker .text-button {
+      .mode-picker .text-button,
+      .wheel-actions .text-button {
         --btn-face: var(--color-surface);
         --btn-ink: var(--color-text);
         --btn-bevel: color-mix(in srgb, var(--btn-face) 78%, var(--btn-ink));
@@ -1692,7 +1693,8 @@
 
       @media (hover: hover) {
         .mode-options .count-option:hover,
-        .mode-picker .text-button:hover {
+        .mode-picker .text-button:hover,
+        .wheel-actions .text-button:hover {
           border-color: var(--btn-ink);
           background-color: var(--btn-face);
           box-shadow:
@@ -1703,7 +1705,8 @@
       }
 
       .mode-options .count-option:active,
-      .mode-picker .text-button:active {
+      .mode-picker .text-button:active,
+      .wheel-actions .text-button:active {
         transform: none;
         box-shadow: none;
         translate: 4px 4px;
@@ -1776,7 +1779,8 @@
       @media (forced-colors: active) {
         .mode-picker,
         .mode-options .count-option,
-        .mode-picker .text-button {
+        .mode-picker .text-button,
+        .wheel-actions .text-button {
           box-shadow: none;
         }
       }
@@ -1838,6 +1842,235 @@
 
       .rp-stage p {
         margin: 0;
+      }
+
+      /* ── Spinning Wheel: the wheel ─────────────────────────────────── */
+      .wheel {
+        position: relative;
+        width: min(100%, 26rem, calc(100dvh - 22rem));
+        min-width: 10rem;
+        aspect-ratio: 1;
+        margin-top: var(--space-3); /* room for the pointer */
+        border: 4px solid var(--color-text);
+        border-radius: 50%;
+        background: var(--color-text);
+        box-shadow: 6px 6px 0 var(--color-text);
+      }
+
+      .wheel-dial {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        border-radius: 50%;
+      }
+
+      /* The drawing turns inside the round, clipped dial. */
+      .wheel-dial svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        will-change: transform;
+      }
+
+      .wheel-dial text {
+        font-family: inherit;
+        font-weight: 700;
+      }
+
+      /* Fixed pointer at the top, pointing down into the wheel. */
+      .wheel-pointer {
+        position: absolute;
+        top: -1.25rem;
+        left: 50%;
+        width: 1.875rem;
+        height: 2.25rem;
+        translate: -50% 0;
+        filter: drop-shadow(3px 3px 0 var(--color-text));
+      }
+
+      .wheel-hub {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        display: grid;
+        place-items: center;
+        width: 22%;
+        aspect-ratio: 1;
+        translate: -50% -50%;
+        border: 4px solid var(--color-text);
+        border-radius: 50%;
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-size: clamp(0.75rem, 3.2vmin, 1.125rem);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+
+      .wheel-result {
+        margin: 0;
+        max-width: 100%;
+        font-size: clamp(1.25rem, 1rem + 1.5vw, 1.75rem);
+        font-weight: 800;
+        overflow-wrap: anywhere;
+      }
+
+      .wheel-result-label {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .wheel-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-4);
+        padding: 0 4px 4px 0; /* room for the hard shadows */
+      }
+
+      .wheel-actions .roll-button {
+        min-width: 10rem;
+      }
+
+      .wheel-actions [aria-disabled='true'] {
+        cursor: progress;
+      }
+
+      /* Spinning Wheel: options popup */
+      .wheel-setup-intro {
+        margin: calc(-1 * var(--space-2)) 0 0;
+        color: var(--color-text-muted);
+      }
+
+      .wheel-add {
+        display: flex;
+        gap: var(--space-3);
+        padding: 0 4px 4px 0;
+      }
+
+      .wheel-add input {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-3);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+      }
+
+      .wheel-add input:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      .wheel-add input:disabled {
+        border-style: dashed;
+        opacity: 0.6;
+      }
+
+      .wheel-count {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+      }
+
+      .wheel-list {
+        display: flex;
+        flex-direction: column;
+        max-height: min(15rem, 32dvh);
+        margin: calc(-1 * var(--space-2)) 0 0;
+        padding: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border: 2px solid var(--color-border);
+        border-radius: 10px;
+        list-style: none;
+        counter-reset: wheel-item;
+      }
+
+      .wheel-list:empty {
+        display: none;
+      }
+
+      .wheel-list li {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: var(--tap-min);
+        padding-left: var(--space-3);
+        border-bottom: 1px solid var(--color-border-subtle);
+        counter-increment: wheel-item;
+      }
+
+      .wheel-list li:last-child {
+        border-bottom: 0;
+      }
+
+      .wheel-list li::before {
+        content: counter(wheel-item);
+        min-width: 1.5rem;
+        color: var(--color-text-muted);
+        font-size: 0.8125rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .wheel-swatch {
+        flex: none;
+        width: 0.875rem;
+        height: 0.875rem;
+        border: 2px solid var(--color-text);
+        border-radius: 50%;
+      }
+
+      .wheel-item-text {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .wheel-result:not([hidden]) {
+          animation: rp-land 280ms var(--ease);
+        }
+      }
+
+      @media (forced-colors: active) {
+        .wheel,
+        .wheel-actions .text-button {
+          box-shadow: none;
+        }
+        .wheel-pointer {
+          filter: none;
+        }
+      }
+
+      /* Short landscape phones: wheel on the left, everything else beside it. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .rp-game[data-mode='wheel'] {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          column-gap: var(--space-6);
+          row-gap: var(--space-2);
+          align-items: center;
+          max-width: 48rem;
+        }
+        .rp-game[data-mode='wheel'] .wheel {
+          grid-row: 1 / span 5;
+          width: min(calc(100dvh - 7rem), 45vw);
+          min-width: 9rem;
+        }
+        .rp-game[data-mode='wheel'] > :not(.wheel) {
+          grid-column: 2;
+        }
+        .wheel-list {
+          max-height: 6rem;
+        }
       }
 
       /* Random Number: the picked number, sized to fit any length. */
@@ -2118,10 +2351,36 @@
               <span class="rp-range" id="rp-range"></span>
             </div>
           </div>
+          <!-- Spinning Wheel -->
+          <div class="wheel" id="wheel" hidden>
+            <div class="wheel-dial" id="wheel-dial">
+              <svg id="wheel-svg" viewBox="-100 -100 200 200" role="img" aria-label="Wheel"></svg>
+            </div>
+            <svg class="wheel-pointer" viewBox="0 0 36 44" aria-hidden="true" focusable="false">
+              <path
+                d="M4 3h28L18 41z"
+                fill="var(--color-accent)"
+                stroke="var(--color-text)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wheel-hub" aria-hidden="true">SPIN</div>
+          </div>
+          <p class="wheel-result" id="wheel-result" hidden>
+            <span class="wheel-result-label">Result</span>
+            <span id="wheel-result-text"></span>
+          </p>
           <p class="visually-hidden" id="rp-announcer" role="status" aria-live="polite"></p>
           <button type="button" class="action-button roll-button" id="rp-press" hidden>
             Pick again
           </button>
+          <div class="wheel-actions" id="wheel-actions" hidden>
+            <button type="button" class="text-button" id="wheel-edit">Edit options</button>
+            <button type="button" class="action-button roll-button" id="wheel-spin">
+              Spin again
+            </button>
+          </div>
         </section>
       </main>
     </div>
@@ -2315,6 +2574,65 @@
             id="range-picker-continue"
             disabled
             aria-describedby="range-picker-hint"
+          >
+            PRESS
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Spinning Wheel: the options to put on the wheel -->
+    <dialog
+      class="mode-picker"
+      id="wheel-setup"
+      aria-labelledby="wheel-setup-title"
+      aria-describedby="wheel-setup-intro"
+    >
+      <form method="dialog" id="wheel-setup-form" novalidate>
+        <div class="picker-header">
+          <h2 id="wheel-setup-title">Add wheel options</h2>
+          <button type="button" class="icon-button" id="wheel-setup-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p class="wheel-setup-intro" id="wheel-setup-intro">
+          Add 2 to 50 options, then tap PRESS to spin.
+        </p>
+
+        <div class="wheel-add">
+          <label for="wheel-input" class="visually-hidden">New option</label>
+          <input
+            type="text"
+            id="wheel-input"
+            maxlength="40"
+            autocomplete="off"
+            enterkeyhint="enter"
+            placeholder="Type an option, e.g. Pizza"
+          />
+          <button type="button" class="text-button" id="wheel-add">Add</button>
+        </div>
+
+        <p class="wheel-count" id="wheel-count" aria-live="polite">0 / 50 options</p>
+        <ol class="wheel-list" id="wheel-list" aria-label="Wheel options"></ol>
+
+        <p class="picker-hint" id="wheel-hint">Add at least 2 options.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="wheel-setup-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="wheel-setup-press"
+            disabled
+            aria-describedby="wheel-hint"
           >
             PRESS
           </button>
@@ -3073,6 +3391,7 @@
           lastChoice = chosen.value;
           picker.close();
           if (chosen.value === 'number') openRange();
+          else if (chosen.value === 'wheel') openWheelSetup('home');
           else {
             rollOnArrival = chosen.value === 'alphabet'; // a letter appears straight away
             navigate('random-picker', chosen.value);
@@ -3255,6 +3574,297 @@
 
         pressButton.addEventListener('click', press);
 
+        /* ── Spinning Wheel ─────────────────────────────────────────────
+           Options live in memory for this tab only (nothing is saved). */
+        const WHEEL_MIN = 2;
+        const WHEEL_MAX = 50;
+        const WHEEL_SPIN_MS = 4800;
+        // Bright, party-style slice colours (like a real prize wheel).
+        const WHEEL_COLORS = [
+          '#E53935',
+          '#FB8C00',
+          '#FDD835',
+          '#43A047',
+          '#00ACC1',
+          '#1E88E5',
+          '#5E35B1',
+          '#D81B60',
+          '#8E24AA',
+          '#7CB342',
+        ];
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const wheelEl = document.getElementById('wheel');
+        const wheelSvg = document.getElementById('wheel-svg');
+        const wheelResult = document.getElementById('wheel-result');
+        const wheelResultText = document.getElementById('wheel-result-text');
+        const wheelActions = document.getElementById('wheel-actions');
+        const wheelSpinButton = document.getElementById('wheel-spin');
+        const wheelEditButton = document.getElementById('wheel-edit');
+        const screenEl = document.getElementById('random-picker');
+        const wheel = { options: [], rotation: 0, spinning: false, token: 0 };
+        let spinOnArrival = false; // set by PRESS in the options popup
+
+        /** Text colour (near-black or white) that reads best on a slice colour. */
+        function inkOn(hex) {
+          const [r, g, b] = [1, 3, 5].map((i) => {
+            const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          });
+          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          return (lum + 0.05) / 0.05 >= 1.05 / (lum + 0.05) ? '#111111' : '#FFFFFF';
+        }
+
+        /** Slice colours, never repeating next to each other (also last → first). */
+        function sliceColors(count) {
+          const n = WHEEL_COLORS.length;
+          return Array.from({ length: count }, (_, i) => {
+            if (i === count - 1 && count > 2 && i % n === 0) return WHEEL_COLORS[1];
+            return WHEEL_COLORS[i % n];
+          });
+        }
+
+        function buildWheel() {
+          const options = wheel.options;
+          const count = options.length;
+          const colors = sliceColors(count);
+          const slice = (2 * Math.PI) / count;
+          const r = 100;
+          // Label size and length shrink as slices get thinner.
+          const fontSize = Math.max(4.2, Math.min(11, 0.62 * r * slice * 0.55));
+          const room = 0.64 * r; // from the hub's edge to the label's end
+          const minSize = Math.min(fontSize, 6);
+          const parts = [];
+          options.forEach((text, i) => {
+            const a0 = i * slice - Math.PI / 2;
+            const a1 = a0 + slice;
+            const x0 = r * Math.cos(a0);
+            const y0 = r * Math.sin(a0);
+            const x1 = r * Math.cos(a1);
+            const y1 = r * Math.sin(a1);
+            const large = slice > Math.PI ? 1 : 0;
+            const path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute(
+              'd',
+              count === 1
+                ? 'M0 -100A100 100 0 1 1 0 100A100 100 0 1 1 0 -100z'
+                : `M0 0L${x0.toFixed(3)} ${y0.toFixed(3)}A${r} ${r} 0 ${large} 1 ${x1.toFixed(3)} ${y1.toFixed(3)}z`,
+            );
+            path.setAttribute('fill', colors[i]);
+            path.setAttribute('stroke', '#FFFFFF');
+            path.setAttribute('stroke-width', count > 30 ? '0.6' : '1.2');
+            parts.push(path);
+
+            const label = document.createElementNS(SVG_NS, 'text');
+            const mid = ((a0 + slice / 2) * 180) / Math.PI;
+            label.setAttribute('transform', `rotate(${mid.toFixed(3)}) translate(${r * 0.88} 0)`);
+            label.setAttribute('text-anchor', 'end');
+            label.setAttribute('dominant-baseline', 'central');
+            // Long labels shrink to fit first; only if still too long are they cut.
+            const size = Math.max(minSize, Math.min(fontSize, room / (0.56 * text.length)));
+            const maxChars = Math.max(3, Math.floor(room / (0.56 * size)));
+            label.setAttribute('font-size', size.toFixed(2));
+            label.setAttribute('fill', inkOn(colors[i]));
+            label.textContent = text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text;
+            parts.push(label);
+          });
+          wheelSvg.replaceChildren(...parts);
+          wheelSvg.setAttribute('aria-label', `Spinning wheel with ${count} options`);
+          setWheelRotation(wheel.rotation, false);
+          // Swatches in the options list match the slices.
+          [...wheelList.children].forEach((li, i) => {
+            li.querySelector('.wheel-swatch').style.background = colors[i];
+          });
+        }
+
+        function setWheelRotation(deg, animate) {
+          wheelSvg.style.transition = animate
+            ? `transform ${WHEEL_SPIN_MS}ms cubic-bezier(0.12, 0.6, 0.1, 1)`
+            : 'none';
+          wheelSvg.style.transform = `rotate(${deg}deg)`;
+        }
+
+        function setWheelBusy(busy) {
+          wheel.spinning = busy;
+          [wheelSpinButton, wheelEditButton].forEach((b) =>
+            busy ? b.setAttribute('aria-disabled', 'true') : b.removeAttribute('aria-disabled'),
+          );
+        }
+
+        function spinWheel() {
+          if (wheel.spinning || wheel.options.length < WHEEL_MIN) return;
+          const count = wheel.options.length;
+          const winner = randomUpTo(count) - 1;
+          const sliceDeg = 360 / count;
+          // Land somewhere inside the winning slice (not always dead centre).
+          const offset = (randomUpTo(1000) / 1000 - 0.5) * sliceDeg * 0.7;
+          const target = 360 - ((winner + 0.5) * sliceDeg + offset); // slice under the pointer
+          const current = ((wheel.rotation % 360) + 360) % 360;
+          const delta = (((target - current) % 360) + 360) % 360;
+          const turns = reducedMotion.matches ? 0 : 5 + randomUpTo(2);
+          wheel.rotation += turns * 360 + delta;
+          const token = ++wheel.token;
+          wheelResult.hidden = true;
+          announcer.textContent = '';
+          const finish = () => {
+            if (token !== wheel.token) return;
+            setWheelBusy(false);
+            wheelResultText.textContent = wheel.options[winner];
+            wheelResult.hidden = false;
+            wheelSpinButton.textContent = 'Spin again';
+            announcer.textContent = 'The wheel landed on ' + wheel.options[winner] + '.';
+          };
+          if (reducedMotion.matches) {
+            setWheelRotation(wheel.rotation, false);
+            return finish();
+          }
+          setWheelBusy(true);
+          void wheelSvg.getBoundingClientRect(); // make sure the browser starts from the current angle
+          setWheelRotation(wheel.rotation, true);
+          setTimeout(finish, WHEEL_SPIN_MS + 60);
+        }
+
+        /** Shows the wheel screen for the current options (or asks for some). */
+        function showWheelScreen() {
+          wheel.token++;
+          setWheelBusy(false);
+          const ready = wheel.options.length >= WHEEL_MIN;
+          stage.hidden = ready;
+          wheelEl.hidden = !ready;
+          wheelActions.hidden = false;
+          wheelResult.hidden = true;
+          wheelSpinButton.hidden = !ready;
+          wheelSpinButton.textContent = 'Spin';
+          wheelEditButton.textContent = ready ? 'Edit options' : 'Add options';
+          if (ready) buildWheel();
+          else placeholder.textContent = 'Add 2 to 50 options to make your wheel.';
+        }
+
+        wheelSpinButton.addEventListener('click', spinWheel);
+        wheelEditButton.addEventListener('click', () => {
+          if (!wheel.spinning) openWheelSetup('screen');
+        });
+
+        /* ── Spinning Wheel: options popup ─────────────────────────────── */
+        const wheelSetup = document.getElementById('wheel-setup');
+        const wheelForm = document.getElementById('wheel-setup-form');
+        const wheelInput = document.getElementById('wheel-input');
+        const wheelAddButton = document.getElementById('wheel-add');
+        const wheelList = document.getElementById('wheel-list');
+        const wheelCount = document.getElementById('wheel-count');
+        const wheelHint = document.getElementById('wheel-hint');
+        const wheelPress = document.getElementById('wheel-setup-press');
+        const wheelBack = document.getElementById('wheel-setup-back');
+        let draft = []; // options being edited in the popup
+        let setupFrom = 'home'; // where the popup was opened from
+
+        const removeIcon =
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+          '<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+        function renderDraft(focusIndex) {
+          const colors = sliceColors(draft.length);
+          wheelList.replaceChildren(
+            ...draft.map((text, i) => {
+              const li = document.createElement('li');
+              const swatch = document.createElement('span');
+              swatch.className = 'wheel-swatch';
+              swatch.style.background = colors[i];
+              const label = document.createElement('span');
+              label.className = 'wheel-item-text';
+              label.textContent = text;
+              const remove = document.createElement('button');
+              remove.type = 'button';
+              remove.className = 'icon-button';
+              remove.setAttribute('aria-label', 'Remove ' + text);
+              remove.innerHTML = removeIcon;
+              remove.addEventListener('click', () => {
+                draft.splice(i, 1);
+                renderDraft(i);
+              });
+              li.append(swatch, label, remove);
+              return li;
+            }),
+          );
+          const full = draft.length >= WHEEL_MAX;
+          wheelCount.textContent = `${draft.length} / ${WHEEL_MAX} options`;
+          wheelInput.disabled = full;
+          wheelAddButton.disabled = full;
+          wheelPress.disabled = draft.length < WHEEL_MIN;
+          wheelHint.hidden = draft.length >= WHEEL_MIN && !full;
+          wheelHint.textContent = full
+            ? `That's the maximum of ${WHEEL_MAX} options.`
+            : `Add at least ${WHEEL_MIN} options.`;
+          if (focusIndex !== undefined) {
+            const buttons = wheelList.querySelectorAll('button');
+            (buttons[Math.min(focusIndex, buttons.length - 1)] || wheelInput).focus();
+          }
+        }
+
+        function addOption() {
+          const text = wheelInput.value.trim().replace(/\s+/g, ' ');
+          if (!text || draft.length >= WHEEL_MAX) {
+            wheelInput.focus();
+            return;
+          }
+          draft.push(text);
+          wheelInput.value = '';
+          renderDraft();
+          wheelList.lastElementChild?.scrollIntoView({ block: 'nearest' });
+          if (!wheelInput.disabled) wheelInput.focus();
+          else wheelPress.focus();
+        }
+
+        function openWheelSetup(from) {
+          setupFrom = from;
+          draft = [...wheel.options];
+          wheelInput.value = '';
+          wheelBack.textContent = from === 'screen' ? 'Cancel' : 'Back';
+          renderDraft();
+          wheelSetup.showModal();
+          (wheelInput.disabled ? wheelPress : wheelInput).focus();
+        }
+
+        function closeWheelSetup() {
+          wheelSetup.close();
+          (setupFrom === 'screen' ? wheelEditButton : option).focus();
+        }
+
+        wheelAddButton.addEventListener('click', addOption);
+        wheelInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Enter adds the option; PRESS starts the game
+            addOption();
+          }
+        });
+        document.getElementById('wheel-setup-close').addEventListener('click', closeWheelSetup);
+        wheelBack.addEventListener('click', () => {
+          if (setupFrom === 'screen') return closeWheelSetup();
+          wheelSetup.close();
+          openPicker(); // back to "Choose a picker", Spinning Wheel still selected
+        });
+        wheelSetup.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeWheelSetup();
+        });
+        wheelSetup.addEventListener('click', (event) => {
+          if (event.target === wheelSetup) closeWheelSetup(); // backdrop
+        });
+        wheelForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (draft.length < WHEEL_MIN) return;
+          wheel.options = [...draft];
+          wheelSetup.close();
+          if (location.hash === '#random-picker/wheel') {
+            // Already on the wheel screen (Edit options): rebuild and spin.
+            showWheelScreen();
+            wheelSpinButton.focus();
+            spinWheel();
+          } else {
+            spinOnArrival = true;
+            navigate('random-picker', 'wheel');
+          }
+        });
+
         /** Splits a route param such as number/50 into { mode, max }. */
         function parseParam(param) {
           const [mode, extra] = param.split('/');
@@ -3279,7 +3889,13 @@
             const mode = MODES[route.mode];
             title.textContent = mode.name;
             const playable = route.mode === 'number' || route.mode === 'alphabet';
+            const isWheel = route.mode === 'wheel';
+            screenEl.dataset.mode = route.mode;
             pressButton.hidden = !playable;
+            stage.hidden = false;
+            wheelEl.hidden = true;
+            wheelResult.hidden = true;
+            wheelActions.hidden = true;
             if (playable) {
               if (route.mode === 'number') resetNumberGame(route.max);
               else resetNumberGame(26, 'alphabet');
@@ -3287,8 +3903,13 @@
             } else {
               resetNumberGame(0);
               placeholder.textContent = mode.placeholder;
+              if (isWheel) {
+                showWheelScreen();
+                if (spinOnArrival) spinWheel(); // PRESS in the options popup starts the game
+              }
             }
             rollOnArrival = false;
+            spinOnArrival = false;
             lastChoice = route.mode;
             if (route.max) lastMax = route.max;
             if (fromNavigation) title.focus();
@@ -3296,6 +3917,8 @@
           leave() {
             game.token++; // stop a roll that is still running
             game.rolling = false;
+            wheel.token++; // and a wheel that is still spinning
+            setWheelBusy(false);
           },
         });
       })();
