@@ -1655,6 +1655,249 @@
       }
 
       /* ════════════════════════════════════════════════════════════════
+         GAME: DUMB CHARADES
+         Reuses the Random Picker / Hot Seat screen pieces (stage, big
+         text, secret card, main-style buttons, list popups).
+         ════════════════════════════════════════════════════════════════ */
+      .dc-kicker {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      /* Big text: shrinks for long names/answers, but wraps before it gets tiny. */
+      #dc-stage .rp-number {
+        font-size: clamp(1.5rem, calc(150cqi / var(--len)), min(5rem, 18dvh));
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+        text-align: center;
+      }
+
+      #dc-stage[data-urgent] .rp-number {
+        color: var(--color-accent-strong);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        #dc-stage[data-urgent] .rp-number {
+          animation: dc-pulse 1s ease-in-out infinite;
+        }
+      }
+
+      @keyframes dc-pulse {
+        50% {
+          scale: 1.08;
+        }
+      }
+
+      .dc-note {
+        max-width: 30rem;
+        text-align: center;
+      }
+
+      .dc-section-label {
+        margin: 0;
+        font-weight: 650;
+      }
+
+      .dc-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .dc-options-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-2);
+      }
+
+      .dc-options-4 .count-option,
+      .dc-categories .count-option {
+        min-height: var(--tap-min);
+        padding-block: var(--space-2);
+        font-size: 0.9375rem;
+        line-height: 1.2;
+      }
+
+      /* Categories: leave room on the right for the check badge. */
+      .dc-categories .count-option {
+        padding-inline: var(--space-2) 1.9rem;
+      }
+
+      /* Difficulty and time: one row of four; the fill alone marks the choice. */
+      .mode-options.dc-options-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .dc-options-4 .count-option {
+        padding-inline: var(--space-1);
+      }
+      .dc-options-4 .count-option:has(input:checked)::after {
+        display: none;
+      }
+
+      .dc-categories {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-2);
+      }
+
+      .dc-guessers {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
+        padding: 0 4px 4px 0;
+      }
+
+      .dc-guessers .text-button {
+        width: 100%;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .dc-scores {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        border: 2px solid var(--color-border);
+        border-radius: 10px;
+        list-style: none;
+      }
+
+      .dc-scores li {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: var(--tap-min);
+        padding: 0 var(--space-4);
+        border-bottom: 1px solid var(--color-border-subtle);
+        font-weight: 650;
+      }
+
+      .dc-scores li:last-child {
+        border-bottom: 0;
+      }
+
+      .dc-rank {
+        min-width: 1.5rem;
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dc-score-name {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .dc-score-points {
+        font-size: 1.125rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dc-scores li[data-top] .dc-score-points {
+        color: var(--color-accent-strong);
+      }
+
+      @media (orientation: portrait) and (max-height: 42rem) {
+        #dumb-charades {
+          gap: var(--space-3);
+        }
+        #dumb-charades .rp-stage {
+          min-height: 11rem;
+        }
+        #dumb-charades .roll-button {
+          min-height: var(--tap-min);
+          font-size: 1.0625rem;
+        }
+        #dumb-charades .deal-actions {
+          gap: var(--space-3);
+        }
+        #dumb-charades .hs-more {
+          padding: 0 var(--space-2);
+          font-size: 0.875rem;
+        }
+        #dumb-charades .hs-links {
+          column-gap: var(--space-2);
+        }
+      }
+
+      /* Short landscape phones: the stage or card on the left, the rest beside it. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        #dumb-charades {
+          display: grid;
+          grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+          grid-template-areas:
+            'main note'
+            'main actions'
+            'main more';
+          align-content: center;
+          align-items: center;
+          column-gap: var(--space-6);
+          row-gap: var(--space-1);
+          max-width: 52rem;
+        }
+        #dumb-charades h1 {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+        #dumb-charades .rp-stage,
+        #dumb-charades .hs-question {
+          grid-area: main;
+          width: 100%;
+        }
+        #dumb-charades .rp-stage {
+          min-height: min(13rem, calc(100dvh - 6rem));
+        }
+        #dumb-charades .dc-note {
+          grid-area: note;
+          font-size: 0.875rem;
+        }
+        #dumb-charades .deal-actions {
+          grid-area: actions;
+          gap: var(--space-2);
+        }
+        #dumb-charades .roll-button {
+          min-height: var(--tap-min);
+          font-size: 1.0625rem;
+        }
+        #dumb-charades .hs-links {
+          grid-area: more;
+          column-gap: var(--space-1);
+        }
+        #dumb-charades .hs-more {
+          padding: 0 var(--space-2);
+          font-size: 0.8125rem;
+        }
+        #dumb-charades .hs-question {
+          gap: var(--space-2);
+          padding: var(--space-4);
+        }
+        #dumb-charades .hs-question-text {
+          font-size: 1.375rem;
+        }
+        .dc-settings form,
+        #dc-players form {
+          gap: var(--space-3);
+          padding-block: var(--space-3);
+        }
+      }
+
+      @media (forced-colors: active) {
+        #dc-stage[data-urgent] .rp-number {
+          color: Highlight;
+        }
+      }
+
+      /* ════════════════════════════════════════════════════════════════
          GAME: HOT SEAT
          Reuses the Random Picker screen styles (stage, big letter,
          main-style buttons); only the question card is its own.
@@ -3042,7 +3285,11 @@
                 Random Picker
               </button>
             </li>
-            <li><button type="button" class="game-option">Dumb Charades</button></li>
+            <li>
+              <button type="button" class="game-option" data-game="dumb-charades">
+                Dumb Charades
+              </button>
+            </li>
             <li>
               <button
                 type="button"
@@ -3113,6 +3360,34 @@
           </div>
           <p class="visually-hidden" id="dice-announcer" role="status" aria-live="polite"></p>
           <button type="button" class="action-button roll-button" id="roll-button">Roll</button>
+        </section>
+
+        <!-- Dumb Charades: a random actor, a secret word, a countdown. -->
+        <section class="rp-game" id="dumb-charades" aria-labelledby="dc-title" hidden>
+          <h1 id="dc-title" tabindex="-1">Dumb Charades</h1>
+          <div class="rp-stage" id="dc-stage">
+            <div class="rp-result" id="dc-result">
+              <span class="dc-kicker" id="dc-kicker"></span>
+              <span class="rp-number" id="dc-big"></span>
+              <span class="rp-range" id="dc-caption"></span>
+            </div>
+          </div>
+          <figure class="hs-question" id="dc-secret" hidden>
+            <figcaption class="hs-question-label" id="dc-secret-label"></figcaption>
+            <p class="hs-question-text" id="dc-secret-text"></p>
+            <p class="hs-who">Act it out without speaking. Don't let anyone else see!</p>
+          </figure>
+          <p class="hs-who dc-note" id="dc-note" hidden></p>
+          <p class="visually-hidden" id="dc-announcer" role="status" aria-live="polite"></p>
+          <div class="deal-actions" id="dc-actions" hidden>
+            <button type="button" class="text-button" id="dc-secondary"></button>
+            <button type="button" class="action-button roll-button" id="dc-primary"></button>
+          </div>
+          <div class="hs-links" id="dc-links" hidden>
+            <button type="button" class="hs-more" id="dc-scores-open">Scores</button>
+            <button type="button" class="hs-more" id="dc-setup-open">Players &amp; settings</button>
+            <button type="button" class="hs-more" id="dc-words-open">Add words</button>
+          </div>
         </section>
 
         <!-- Hot Seat: a random letter picks the player, then a question. -->
@@ -3368,6 +3643,255 @@
           >
             Continue
           </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dumb Charades: who's playing -->
+    <dialog
+      class="mode-picker"
+      id="dc-players"
+      aria-labelledby="dc-players-title"
+      aria-describedby="dc-players-intro"
+    >
+      <form method="dialog" id="dc-players-form" novalidate>
+        <div class="picker-header">
+          <h2 id="dc-players-title">Who's playing?</h2>
+          <button type="button" class="icon-button" id="dc-players-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="wheel-setup-intro" id="dc-players-intro">
+          Add 2 to 12 players. The game picks who acts and keeps the score.
+        </p>
+        <div class="wheel-add">
+          <label for="dc-name" class="visually-hidden">Player name</label>
+          <input
+            type="text"
+            id="dc-name"
+            maxlength="20"
+            autocomplete="off"
+            enterkeyhint="enter"
+            placeholder="Player name, e.g. Priya"
+          />
+          <button type="button" class="text-button" id="dc-name-add">Add</button>
+        </div>
+        <p class="wheel-count" id="dc-players-count" aria-live="polite">0 players</p>
+        <ol class="wheel-list" id="dc-players-list" aria-label="Players"></ol>
+        <p class="picker-hint" id="dc-players-hint">Add at least 2 players.</p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dc-players-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="dc-players-next"
+            disabled
+            aria-describedby="dc-players-hint"
+          >
+            Next
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dumb Charades: categories, difficulty, timer -->
+    <dialog class="mode-picker dc-settings" id="dc-settings" aria-labelledby="dc-settings-title">
+      <form method="dialog" id="dc-settings-form" novalidate>
+        <div class="picker-header">
+          <h2 id="dc-settings-title">Game settings</h2>
+          <button type="button" class="icon-button" id="dc-settings-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <fieldset class="dc-group">
+          <legend class="dc-section-label">Categories</legend>
+          <div class="count-options mode-options dc-categories">
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="movies" />
+              <span>Movies</span>
+            </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="cartoons" />
+              <span>Cartoons &amp; Characters</span>
+            </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="celebrities" />
+              <span>Celebrities</span>
+            </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="objects" />
+              <span>Objects &amp; Things</span>
+            </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="nature" />
+              <span>Animals &amp; Nature</span>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="dc-group">
+          <legend class="dc-section-label">Difficulty</legend>
+          <div class="count-options mode-options dc-options-4">
+            <label class="count-option">
+              <input type="radio" name="dc-difficulty" value="easy" />
+              <span>Easy</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="dc-difficulty" value="medium" />
+              <span>Medium</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="dc-difficulty" value="hard" />
+              <span>Hard</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="dc-difficulty" value="mixed" />
+              <span>Mixed</span>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="dc-group">
+          <legend class="dc-section-label">Time to act</legend>
+          <div class="count-options mode-options dc-options-4">
+            <label class="count-option">
+              <input type="radio" name="dc-time" value="30" />
+              <span>30s</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="dc-time" value="60" />
+              <span>60s</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="dc-time" value="90" />
+              <span>90s</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="dc-time" value="120" />
+              <span>2 min</span>
+            </label>
+          </div>
+        </fieldset>
+        <p class="picker-hint" id="dc-settings-hint" hidden>Choose at least one category.</p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dc-settings-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="dc-settings-start"
+            aria-describedby="dc-settings-hint"
+          >
+            Start
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dumb Charades: who guessed it? -->
+    <dialog class="mode-picker" id="dc-guess" aria-labelledby="dc-guess-title">
+      <form method="dialog">
+        <div class="picker-header">
+          <h2 id="dc-guess-title">Who guessed it?</h2>
+          <button type="button" class="icon-button" id="dc-guess-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="wheel-setup-intro">The guesser and the actor each get a point.</p>
+        <div class="dc-guessers" id="dc-guessers"></div>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dc-guess-cancel">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dumb Charades: scoreboard -->
+    <dialog class="mode-picker" id="dc-score-dialog" aria-labelledby="dc-score-title">
+      <form method="dialog">
+        <div class="picker-header">
+          <h2 id="dc-score-title">Scores</h2>
+          <button type="button" class="icon-button" id="dc-score-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <ol class="dc-scores" id="dc-scores" aria-label="Scores"></ol>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dc-score-reset">Reset scores</button>
+          <button type="submit" class="action-button" id="dc-score-done">Done</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Dumb Charades: the players' own words -->
+    <dialog
+      class="mode-picker"
+      id="dc-words"
+      aria-labelledby="dc-words-title"
+      aria-describedby="dc-words-intro"
+    >
+      <form method="dialog" id="dc-words-form" novalidate>
+        <div class="picker-header">
+          <h2 id="dc-words-title">Add your own words</h2>
+          <button type="button" class="icon-button" id="dc-words-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="wheel-setup-intro" id="dc-words-intro">
+          Words, movies or phrases. They're mixed in with the built-in ones.
+        </p>
+        <div class="wheel-add">
+          <label for="dc-word" class="visually-hidden">New word</label>
+          <input
+            type="text"
+            id="dc-word"
+            maxlength="60"
+            autocomplete="off"
+            enterkeyhint="enter"
+            placeholder="e.g. Brushing teeth"
+          />
+          <button type="button" class="text-button" id="dc-word-add">Add</button>
+        </div>
+        <p class="wheel-count" id="dc-words-count" aria-live="polite">0 of your words</p>
+        <ol class="wheel-list" id="dc-words-list" aria-label="Your words"></ol>
+        <label class="hs-only" id="dc-only-row" hidden>
+          <input type="checkbox" id="dc-only" />
+          Only use our words
+        </label>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dc-words-cancel">Cancel</button>
+          <button type="submit" class="action-button" id="dc-words-save">Save</button>
         </div>
       </form>
     </dialog>
@@ -5916,6 +6440,909 @@
             closeHand();
           },
         });
+      })();
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: DUMB CHARADES
+         Players are added once; each round a random player acts (everyone
+         acts once before anyone acts twice), sees a secret word only they
+         should see, then acts it out against a countdown. The guesser and
+         the actor each score a point. No word repeats until the chosen
+         list runs out. Everything lives in memory for this tab only.
+         ════════════════════════════════════════════════════════════════ */
+      (() => {
+        const option = document.querySelector('[data-game="dumb-charades"]');
+        const view = document.getElementById('dumb-charades');
+        const title = document.getElementById('dc-title');
+        const stage = document.getElementById('dc-stage');
+        const kicker = document.getElementById('dc-kicker');
+        const big = document.getElementById('dc-big');
+        const caption = document.getElementById('dc-caption');
+        const secret = document.getElementById('dc-secret');
+        const secretLabel = document.getElementById('dc-secret-label');
+        const secretText = document.getElementById('dc-secret-text');
+        const note = document.getElementById('dc-note');
+        const announcer = document.getElementById('dc-announcer');
+        const actions = document.getElementById('dc-actions');
+        const links = document.getElementById('dc-links');
+        const primary = document.getElementById('dc-primary');
+        const secondary = document.getElementById('dc-secondary');
+        const WORDS = {
+          movies: {
+            easy: [
+              'Sholay',
+              'Titanic',
+              'Lagaan',
+              'Avatar',
+              'Dangal',
+              'Frozen',
+              'Baahubali',
+              'Jurassic Park',
+              '3 Idiots',
+              'The Lion King',
+              'RRR',
+              'Spider-Man',
+            ],
+            medium: [
+              'Dilwale Dulhania Le Jayenge',
+              'Inception',
+              'Taare Zameen Par',
+              'Home Alone',
+              'KGF',
+              'Finding Nemo',
+              'Kabhi Khushi Kabhie Gham',
+              'The Dark Knight',
+              'Pushpa',
+              'Harry Potter',
+              'Chennai Express',
+              'Toy Story',
+            ],
+            hard: [
+              'Gangs of Wasseypur',
+              'The Shawshank Redemption',
+              'Andhadhun',
+              'Interstellar',
+              'Drishyam',
+              'Forrest Gump',
+              'Swades',
+              'The Godfather',
+              'Kantara',
+              'Life of Pi',
+              'Barfi!',
+              'Inside Out',
+            ],
+          },
+          cartoons: {
+            easy: [
+              'Mickey Mouse',
+              'Doraemon',
+              'Chhota Bheem',
+              'Tom and Jerry',
+              'Batman',
+              'Pikachu',
+              'SpongeBob',
+              'Superman',
+              'Shin-chan',
+              'Hulk',
+              'Popeye',
+              'Mr. Bean',
+            ],
+            medium: [
+              'Scooby-Doo',
+              'Captain America',
+              'Motu Patlu',
+              'Minions',
+              'Winnie the Pooh',
+              'Iron Man',
+              'Shrek',
+              'Bugs Bunny',
+              'Elsa',
+              'Thor',
+              'Donald Duck',
+              'Peppa Pig',
+            ],
+            hard: [
+              'Optimus Prime',
+              'Doctor Strange',
+              'Ninja Hattori',
+              'Kung Fu Panda',
+              'Black Panther',
+              'Pink Panther',
+              'Groot',
+              'Oswald',
+              'Scrooge McDuck',
+              'Ant-Man',
+              'Johnny Bravo',
+              'Dexter',
+            ],
+          },
+          celebrities: {
+            easy: [
+              'Shah Rukh Khan',
+              'Sachin Tendulkar',
+              'Amitabh Bachchan',
+              'Virat Kohli',
+              'Rajinikanth',
+              'Michael Jackson',
+              'MS Dhoni',
+              'Salman Khan',
+              'Charlie Chaplin',
+              'Lata Mangeshkar',
+              'Cristiano Ronaldo',
+              'Taylor Swift',
+            ],
+            medium: [
+              'Arijit Singh',
+              'Allu Arjun',
+              'Priyanka Chopra',
+              'Usain Bolt',
+              'AR Rahman',
+              'Deepika Padukone',
+              'Lionel Messi',
+              'Elvis Presley',
+              'Hrithik Roshan',
+              'Neeraj Chopra',
+              'Kapil Sharma',
+              'Albert Einstein',
+            ],
+            hard: [
+              'Kishore Kumar',
+              'Mother Teresa',
+              'Roger Federer',
+              'Diljit Dosanjh',
+              'Madhuri Dixit',
+              'Elon Musk',
+              'Sundar Pichai',
+              'Freddie Mercury',
+              'Mithun Chakraborty',
+              'Serena Williams',
+              'Satyajit Ray',
+              'Gordon Ramsay',
+            ],
+          },
+          objects: {
+            easy: [
+              'Umbrella',
+              'Toothbrush',
+              'Mobile phone',
+              'Bicycle',
+              'Scissors',
+              'Guitar',
+              'Ladder',
+              'Camera',
+              'Pressure cooker',
+              'Football',
+              'Mirror',
+              'Clock',
+            ],
+            medium: [
+              'Washing machine',
+              'Doctor',
+              'Chef',
+              'Selfie stick',
+              'Auto rickshaw',
+              'Vacuum cleaner',
+              'Photographer',
+              'Traffic police',
+              'Kite flying',
+              'Hair dryer',
+              'Yoga',
+              'Electrician',
+            ],
+            hard: [
+              'Microwave oven',
+              'Archaeologist',
+              'Escalator',
+              'Parachute',
+              'Typewriter',
+              'Magician',
+              'Wedding photographer',
+              'Juggling',
+              'Fire extinguisher',
+              'Stand-up comedian',
+              'Car mechanic',
+              'Treadmill',
+            ],
+          },
+          nature: {
+            easy: [
+              'Elephant',
+              'Monkey',
+              'Snake',
+              'Cat',
+              'Rain',
+              'Lion',
+              'Rabbit',
+              'Fish',
+              'Peacock',
+              'Dog',
+              'Sun',
+              'Butterfly',
+            ],
+            medium: [
+              'Kangaroo',
+              'Penguin',
+              'Volcano',
+              'Octopus',
+              'Thunderstorm',
+              'Giraffe',
+              'Crocodile',
+              'Owl',
+              'Rainbow',
+              'Tortoise',
+              'Earthquake',
+              'Parrot',
+            ],
+            hard: [
+              'Chameleon',
+              'Tsunami',
+              'Woodpecker',
+              'Jellyfish',
+              'Avalanche',
+              'Flamingo',
+              'Sloth',
+              'Tornado',
+              'Hedgehog',
+              'Northern lights',
+              'Bat',
+              'Waterfall',
+            ],
+          },
+        };
+        const CATEGORY_NAMES = {
+          movies: 'Movies',
+          cartoons: 'Cartoons & Characters',
+          celebrities: 'Celebrities',
+          objects: 'Objects & Things',
+          nature: 'Animals & Nature',
+          custom: 'Your word',
+        };
+        const DIFFICULTY_NAMES = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+        const PLAYERS_MAX = 12;
+        const state = {
+          players: [],
+          scores: new Map(),
+          categories: Object.keys(WORDS),
+          difficulty: 'mixed',
+          seconds: 60,
+          own: [],
+          onlyOwn: false,
+          ready: false, // players + settings chosen
+          phase: 'pass', // pass → secret → acting → result
+          actor: null,
+          lastActor: null,
+          actorBag: [],
+          word: null,
+          lastWord: null,
+          wordBag: [],
+          timer: 0,
+          endsAt: 0,
+          announcedTen: false,
+        };
+
+        /* Fair random integer 1–max (crypto, no modulo bias). */
+        function randomUpTo(max) {
+          const buffer = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= limit);
+          return (buffer[0] % max) + 1;
+        }
+
+        function shuffle(list) {
+          for (let i = list.length - 1; i > 0; i--) {
+            const j = randomUpTo(i + 1) - 1;
+            [list[i], list[j]] = [list[j], list[i]];
+          }
+          return list;
+        }
+
+        /** Next actor: everyone acts once per cycle, never twice in a row. */
+        function nextActor() {
+          if (!state.actorBag.length) {
+            state.actorBag = shuffle([...state.players]);
+            const last = state.actorBag.length - 1;
+            if (last > 0 && state.actorBag[last] === state.lastActor) {
+              [state.actorBag[0], state.actorBag[last]] = [state.actorBag[last], state.actorBag[0]];
+            }
+          }
+          return state.actorBag.pop();
+        }
+
+        function wordPool() {
+          const own = state.own.map((text) => ({ text, category: 'custom' }));
+          if (state.onlyOwn && own.length) return own;
+          const levels =
+            state.difficulty === 'mixed' ? ['easy', 'medium', 'hard'] : [state.difficulty];
+          const built = state.categories.flatMap((category) =>
+            levels.flatMap((level) =>
+              WORDS[category][level].map((text) => ({ text, category, level })),
+            ),
+          );
+          return [...built, ...own];
+        }
+
+        /** Next word: shuffled, no repeats until the list runs out. */
+        function nextWord() {
+          if (!state.wordBag.length) {
+            state.wordBag = shuffle(wordPool());
+            const last = state.wordBag.length - 1;
+            if (last > 0 && state.wordBag[last].text === state.lastWord?.text) {
+              [state.wordBag[0], state.wordBag[last]] = [state.wordBag[last], state.wordBag[0]];
+            }
+          }
+          return state.wordBag.pop();
+        }
+
+        function setBig(text) {
+          big.textContent = text;
+          big.style.setProperty('--len', String(Math.max(3, text.length)));
+        }
+
+        function setButtons(second, first) {
+          secondary.textContent = second;
+          primary.textContent = first;
+        }
+
+        function show({ stageOn = true, secretOn = false, noteText = '', linksOn = false }) {
+          stage.hidden = !stageOn;
+          secret.hidden = !secretOn;
+          note.hidden = !noteText;
+          note.textContent = noteText;
+          links.hidden = !linksOn;
+          actions.hidden = false;
+        }
+
+        function wordLabel(word) {
+          return word.level
+            ? `${CATEGORY_NAMES[word.category]} · ${DIFFICULTY_NAMES[word.level]}`
+            : CATEGORY_NAMES[word.category];
+        }
+
+        /* ── Phases ─────────────────────────────────────────────────── */
+        function startRound(actor) {
+          stopTimer();
+          if (state.phase !== 'pass') state.lastActor = state.actor; // the one who just acted
+          actor ??= nextActor();
+          state.phase = 'pass';
+          state.actor = actor;
+          kicker.textContent = 'Next to act';
+          setBig(actor);
+          caption.textContent = '';
+          show({
+            noteText: `Pass the phone to ${actor}. Everyone else, look away!`,
+            linksOn: true,
+          });
+          scoresOpen.hidden = false;
+          setButtons('Pick someone else', 'Show my word');
+          announcer.textContent = `${actor} is acting next. Pass the phone to ${actor}.`;
+        }
+
+        function showSecret() {
+          state.phase = 'secret';
+          state.lastWord = state.word;
+          state.word = nextWord();
+          secretLabel.textContent = wordLabel(state.word);
+          secretText.textContent = state.word.text;
+          show({ stageOn: false, secretOn: true });
+          setButtons('Skip word', 'Start timer');
+          announcer.textContent = '';
+        }
+
+        function startActing() {
+          state.phase = 'acting';
+          secretText.textContent = ''; // the word leaves the page while acting
+          kicker.textContent = `${state.actor} is acting`;
+          caption.textContent = `${CATEGORY_NAMES[state.word.category]} · no talking!`;
+          show({ noteText: 'Everyone else: shout out your guesses!' });
+          setButtons('Give up', 'Guessed it!');
+          state.endsAt = performance.now() + state.seconds * 1000;
+          state.announcedTen = false;
+          tick();
+          state.timer = setInterval(tick, 250);
+          announcer.textContent = `Go! ${state.seconds} seconds.`;
+        }
+
+        function formatTime(ms) {
+          const total = Math.max(0, Math.ceil(ms / 1000));
+          return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+        }
+
+        function tick() {
+          const left = state.endsAt - performance.now();
+          setBig(formatTime(left));
+          stage.toggleAttribute('data-urgent', left <= 10000);
+          if (left <= 10000 && !state.announcedTen && state.seconds > 10) {
+            state.announcedTen = true;
+            announcer.textContent = '10 seconds left!';
+          }
+          if (left <= 0) finishRound(null, 'time');
+        }
+
+        function stopTimer() {
+          clearInterval(state.timer);
+          state.timer = 0;
+          stage.removeAttribute('data-urgent');
+        }
+
+        /** Ends the round: guesser is a player's name, or null. */
+        function finishRound(guesser, reason = 'guessed') {
+          stopTimer();
+          state.phase = 'result';
+          const answer = state.word.text;
+          if (guesser) {
+            addPoint(guesser);
+            addPoint(state.actor);
+            kicker.textContent = 'Got it!';
+            caption.textContent = `${guesser} guessed it · +1 ${guesser}, +1 ${state.actor}`;
+          } else {
+            kicker.textContent = reason === 'time' ? "Time's up!" : 'Nobody got it';
+            caption.textContent = 'The answer was revealed. No points this round.';
+          }
+          setBig(answer);
+          show({ noteText: leaderLine(), linksOn: true });
+          scoresOpen.hidden = true; // the Scores button is right there
+          setButtons('Scores', 'Next actor');
+          announcer.textContent = `${kicker.textContent} The answer was ${answer}. ${caption.textContent}`;
+          primary.focus();
+        }
+
+        primary.addEventListener('click', () => {
+          if (state.phase === 'pass') showSecret();
+          else if (state.phase === 'secret') startActing();
+          else if (state.phase === 'acting') openGuess();
+          else startRound();
+        });
+        secondary.addEventListener('click', () => {
+          if (state.phase === 'pass') {
+            // Someone else acts instead (put this player back for later).
+            if (state.players.length < 2) return;
+            state.actorBag.unshift(state.actor);
+            let next = nextActor();
+            if (next === state.actor) next = nextActor();
+            startRound(next);
+          } else if (state.phase === 'secret')
+            showSecret(); // skip word
+          else if (state.phase === 'acting') finishRound(null, 'gave-up');
+          else openScores();
+        });
+
+        /* ── Scores ─────────────────────────────────────────────────── */
+        function addPoint(name) {
+          state.scores.set(name, (state.scores.get(name) ?? 0) + 1);
+        }
+
+        function ranking() {
+          return [...state.players]
+            .map((name) => ({ name, points: state.scores.get(name) ?? 0 }))
+            .sort(
+              (a, b) =>
+                b.points - a.points ||
+                state.players.indexOf(a.name) - state.players.indexOf(b.name),
+            );
+        }
+
+        function leaderLine() {
+          const [top] = ranking();
+          if (!top || top.points === 0) return 'No points yet.';
+          const tied = ranking().filter((r) => r.points === top.points);
+          return tied.length > 1
+            ? `Tied on ${top.points}: ${tied.map((r) => r.name).join(', ')}`
+            : `Leader: ${top.name} with ${top.points} point${top.points === 1 ? '' : 's'}`;
+        }
+
+        const scoreDialog = document.getElementById('dc-score-dialog');
+        const scoreList = document.getElementById('dc-scores');
+        const scoresOpen = document.getElementById('dc-scores-open');
+        let scoreReturn = scoresOpen;
+
+        function renderScores() {
+          const rows = ranking();
+          const top = rows[0]?.points ?? 0;
+          scoreList.replaceChildren(
+            ...rows.map((row, i) => {
+              const li = document.createElement('li');
+              if (top > 0 && row.points === top) li.dataset.top = '';
+              li.append(
+                Object.assign(document.createElement('span'), {
+                  className: 'dc-rank',
+                  textContent: String(i + 1),
+                }),
+                Object.assign(document.createElement('span'), {
+                  className: 'dc-score-name',
+                  textContent: row.name,
+                }),
+                Object.assign(document.createElement('span'), {
+                  className: 'dc-score-points',
+                  textContent: String(row.points),
+                }),
+              );
+              li.setAttribute(
+                'aria-label',
+                `${i + 1}. ${row.name}, ${row.points} point${row.points === 1 ? '' : 's'}`,
+              );
+              return li;
+            }),
+          );
+        }
+
+        function openScores() {
+          scoreReturn = document.activeElement;
+          renderScores();
+          scoreDialog.showModal();
+          document.getElementById('dc-score-done').focus();
+        }
+
+        scoresOpen.addEventListener('click', openScores);
+        scoreDialog.addEventListener('close', () => scoreReturn?.focus());
+        document
+          .getElementById('dc-score-close')
+          .addEventListener('click', () => scoreDialog.close());
+        scoreDialog.addEventListener('click', (event) => {
+          if (event.target === scoreDialog) scoreDialog.close();
+        });
+        document.getElementById('dc-score-reset').addEventListener('click', () => {
+          state.scores.clear();
+          renderScores();
+          if (state.phase === 'result') note.textContent = leaderLine();
+          announcer.textContent = 'Scores reset.';
+        });
+
+        /* ── Who guessed it? ────────────────────────────────────────── */
+        const guessDialog = document.getElementById('dc-guess');
+        const guessers = document.getElementById('dc-guessers');
+
+        function openGuess() {
+          guessers.replaceChildren(
+            ...state.players
+              .filter((name) => name !== state.actor)
+              .map((name) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'text-button';
+                b.textContent = name;
+                b.addEventListener('click', () => {
+                  guessDialog.close();
+                  finishRound(name);
+                });
+                return b;
+              }),
+          );
+          guessDialog.showModal(); // the timer keeps running until someone is picked
+          guessers.querySelector('button')?.focus();
+        }
+
+        function closeGuess() {
+          guessDialog.close();
+          if (state.phase === 'acting') primary.focus();
+        }
+
+        document.getElementById('dc-guess-close').addEventListener('click', closeGuess);
+        document.getElementById('dc-guess-cancel').addEventListener('click', closeGuess);
+        guessDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeGuess();
+        });
+        guessDialog.addEventListener('click', (event) => {
+          if (event.target === guessDialog) closeGuess();
+        });
+
+        /* ── Shared list popup (players, own words) ─────────────────── */
+        const removeIcon =
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+          '<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+        function renderList(listEl, items, onRemove, focusIndex, fallback) {
+          listEl.replaceChildren(
+            ...items.map((text, i) => {
+              const li = document.createElement('li');
+              const label = Object.assign(document.createElement('span'), {
+                className: 'wheel-item-text',
+                textContent: text,
+              });
+              const remove = document.createElement('button');
+              remove.type = 'button';
+              remove.className = 'icon-button';
+              remove.setAttribute('aria-label', 'Remove ' + text);
+              remove.innerHTML = removeIcon;
+              remove.addEventListener('click', () => onRemove(i));
+              li.append(label, remove);
+              return li;
+            }),
+          );
+          if (focusIndex !== undefined) {
+            const buttons = listEl.querySelectorAll('button');
+            (buttons[Math.min(focusIndex, buttons.length - 1)] || fallback).focus();
+          }
+        }
+
+        /* ── Who's playing? ─────────────────────────────────────────── */
+        const playersDialog = document.getElementById('dc-players');
+        const playersForm = document.getElementById('dc-players-form');
+        const nameInput = document.getElementById('dc-name');
+        const nameAdd = document.getElementById('dc-name-add');
+        const playersList = document.getElementById('dc-players-list');
+        const playersCount = document.getElementById('dc-players-count');
+        const playersHint = document.getElementById('dc-players-hint');
+        const playersNext = document.getElementById('dc-players-next');
+        const setupOpen = document.getElementById('dc-setup-open');
+        let draftPlayers = [];
+        let setupFrom = 'start'; // 'start' (first time) or 'change' (from the screen)
+
+        function renderPlayers(focusIndex, message) {
+          renderList(
+            playersList,
+            draftPlayers,
+            (i) => {
+              draftPlayers.splice(i, 1);
+              renderPlayers(i);
+            },
+            focusIndex,
+            nameInput,
+          );
+          const n = draftPlayers.length;
+          playersCount.textContent = `${n} player${n === 1 ? '' : 's'}`;
+          nameInput.disabled = n >= PLAYERS_MAX;
+          nameAdd.disabled = n >= PLAYERS_MAX;
+          playersNext.disabled = n < 2;
+          const text =
+            message ??
+            (n >= PLAYERS_MAX
+              ? `That's the maximum of ${PLAYERS_MAX} players.`
+              : n < 2
+                ? 'Add at least 2 players.'
+                : '');
+          playersHint.textContent = text;
+          playersHint.hidden = !text;
+        }
+
+        function addPlayer() {
+          const name = nameInput.value.trim().replace(/\s+/g, ' ');
+          if (!name || draftPlayers.length >= PLAYERS_MAX) return nameInput.focus();
+          if (draftPlayers.some((p) => p.toLowerCase() === name.toLowerCase())) {
+            renderPlayers(undefined, `${name} is already playing.`);
+            return nameInput.focus();
+          }
+          draftPlayers.push(name);
+          nameInput.value = '';
+          renderPlayers();
+          playersList.lastElementChild?.scrollIntoView({ block: 'nearest' });
+          (nameInput.disabled ? playersNext : nameInput).focus();
+        }
+
+        function openPlayers(from) {
+          setupFrom = from;
+          keepSettingsDraft = false; // a fresh setup starts from the saved settings
+          draftPlayers = [...state.players];
+          nameInput.value = '';
+          document.getElementById('dc-players-back').textContent =
+            from === 'start' ? 'Back' : 'Cancel';
+          renderPlayers();
+          playersDialog.showModal();
+          (nameInput.disabled ? playersNext : nameInput).focus();
+        }
+
+        function cancelSetup() {
+          if (playersDialog.open) playersDialog.close();
+          if (settingsDialog.open) settingsDialog.close();
+          if (setupFrom === 'start' && !state.ready)
+            backButton.click(); // no game yet: home
+          else setupOpen.focus();
+        }
+
+        nameAdd.addEventListener('click', addPlayer);
+        nameInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Enter adds the player; Next moves on
+            addPlayer();
+          }
+        });
+        nameInput.addEventListener('input', () => {
+          if (!playersHint.hidden && draftPlayers.length >= 2) playersHint.hidden = true;
+        });
+        document.getElementById('dc-players-close').addEventListener('click', cancelSetup);
+        document.getElementById('dc-players-back').addEventListener('click', cancelSetup);
+        playersDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          cancelSetup();
+        });
+        playersDialog.addEventListener('click', (event) => {
+          if (event.target === playersDialog) cancelSetup();
+        });
+        playersForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (draftPlayers.length < 2) return;
+          playersDialog.close();
+          openSettings();
+        });
+
+        /* ── Game settings ──────────────────────────────────────────── */
+        const settingsDialog = document.getElementById('dc-settings');
+        const settingsForm = document.getElementById('dc-settings-form');
+        const categoryBoxes = [...settingsForm.elements['dc-category']];
+        const difficultyRadios = [...settingsForm.elements['dc-difficulty']];
+        const timeRadios = [...settingsForm.elements['dc-time']];
+        const settingsStart = document.getElementById('dc-settings-start');
+        const settingsHint = document.getElementById('dc-settings-hint');
+
+        function syncSettings() {
+          const any = categoryBoxes.some((b) => b.checked);
+          settingsStart.disabled = !any;
+          settingsHint.hidden = any;
+        }
+
+        let keepSettingsDraft = false; // true after Back: Next shows the edits again
+
+        function openSettings() {
+          if (!keepSettingsDraft) {
+            categoryBoxes.forEach((b) => (b.checked = state.categories.includes(b.value)));
+            difficultyRadios.forEach((r) => (r.checked = r.value === state.difficulty));
+            timeRadios.forEach((r) => (r.checked = Number(r.value) === state.seconds));
+          }
+          keepSettingsDraft = false;
+          settingsStart.textContent = state.ready ? 'Save' : 'Start';
+          syncSettings();
+          settingsDialog.showModal();
+          categoryBoxes[0].focus();
+        }
+
+        categoryBoxes.forEach((b) => b.addEventListener('change', syncSettings));
+        document.getElementById('dc-settings-close').addEventListener('click', cancelSetup);
+        document.getElementById('dc-settings-back').addEventListener('click', () => {
+          keepSettingsDraft = true;
+          settingsDialog.close();
+          playersDialog.showModal(); // back to the players, list kept as edited
+          nameInput.focus();
+        });
+        settingsDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          cancelSetup();
+        });
+        settingsDialog.addEventListener('click', (event) => {
+          if (event.target === settingsDialog) cancelSetup();
+        });
+        settingsForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const categories = categoryBoxes.filter((b) => b.checked).map((b) => b.value);
+          if (!categories.length) return;
+          const playersChanged = draftPlayers.join('\n') !== state.players.join('\n');
+          state.players = [...draftPlayers];
+          [...state.scores.keys()].forEach((name) => {
+            if (!state.players.includes(name)) state.scores.delete(name);
+          });
+          if (playersChanged) state.actorBag = [];
+          state.categories = categories;
+          state.difficulty = difficultyRadios.find((r) => r.checked)?.value ?? 'mixed';
+          state.seconds = Number(timeRadios.find((r) => r.checked)?.value ?? 60);
+          state.wordBag = []; // reshuffle with the new choices
+          settingsDialog.close();
+          const firstTime = !state.ready;
+          state.ready = true;
+          actions.hidden = false;
+          if (firstTime || !state.players.includes(state.actor) || state.phase !== 'result') {
+            startRound();
+            primary.focus();
+          } else {
+            note.textContent = leaderLine();
+            setupOpen.focus();
+          }
+        });
+
+        setupOpen.addEventListener('click', () => openPlayers('change'));
+
+        /* ── Your own words ─────────────────────────────────────────── */
+        const wordsDialog = document.getElementById('dc-words');
+        const wordsForm = document.getElementById('dc-words-form');
+        const wordInput = document.getElementById('dc-word');
+        const wordsList = document.getElementById('dc-words-list');
+        const wordsCount = document.getElementById('dc-words-count');
+        const onlyRow = document.getElementById('dc-only-row');
+        const onlyBox = document.getElementById('dc-only');
+        const wordsOpen = document.getElementById('dc-words-open');
+        let draftWords = [];
+
+        function renderWords(focusIndex) {
+          renderList(
+            wordsList,
+            draftWords,
+            (i) => {
+              draftWords.splice(i, 1);
+              renderWords(i);
+            },
+            focusIndex,
+            wordInput,
+          );
+          const n = draftWords.length;
+          wordsCount.textContent = `${n} of your word${n === 1 ? '' : 's'}`;
+          wordInput.disabled = n >= 100;
+          onlyRow.hidden = n === 0;
+          if (n === 0) onlyBox.checked = false;
+        }
+
+        function addWord() {
+          const text = wordInput.value.trim().replace(/\s+/g, ' ');
+          if (!text || draftWords.length >= 100) return wordInput.focus();
+          draftWords.push(text);
+          wordInput.value = '';
+          renderWords();
+          wordsList.lastElementChild?.scrollIntoView({ block: 'nearest' });
+          wordInput.focus();
+        }
+
+        function closeWords() {
+          wordsDialog.close();
+          wordsOpen.focus();
+        }
+
+        wordsOpen.addEventListener('click', () => {
+          draftWords = [...state.own];
+          onlyBox.checked = state.onlyOwn;
+          wordInput.value = '';
+          renderWords();
+          wordsDialog.showModal();
+          wordInput.focus();
+        });
+        document.getElementById('dc-word-add').addEventListener('click', addWord);
+        wordInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            addWord();
+          }
+        });
+        document.getElementById('dc-words-close').addEventListener('click', closeWords);
+        document.getElementById('dc-words-cancel').addEventListener('click', closeWords);
+        wordsDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeWords();
+        });
+        wordsDialog.addEventListener('click', (event) => {
+          if (event.target === wordsDialog) closeWords();
+        });
+        wordsForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          state.own = [...draftWords];
+          state.onlyOwn = onlyBox.checked && draftWords.length > 0;
+          state.wordBag = [];
+          wordsDialog.close();
+          wordsOpen.textContent = state.own.length
+            ? `Your words (${state.own.length})`
+            : 'Add words';
+          wordsOpen.focus();
+          announcer.textContent = state.own.length
+            ? `${state.own.length} of your words saved.`
+            : 'Using the built-in words.';
+        });
+
+        /* ── Screen ─────────────────────────────────────────────────── */
+        registerScreen('dumb-charades', {
+          view,
+          option,
+          title: 'Dumb Charades',
+          enter(_param, fromNavigation) {
+            if (fromNavigation) title.focus();
+            if (state.ready) {
+              startRound(); // players and settings are kept: straight to a new round
+            } else {
+              stage.hidden = false;
+              secret.hidden = true;
+              note.hidden = true;
+              actions.hidden = true;
+              links.hidden = true;
+              kicker.textContent = '';
+              setBig('?');
+              caption.textContent = 'Add the players to start';
+              openPlayers('start');
+            }
+          },
+          leave() {
+            stopTimer(); // a round in progress is dropped
+            [playersDialog, settingsDialog, guessDialog, scoreDialog, wordsDialog].forEach((d) => {
+              if (d.open) d.close();
+            });
+          },
+        });
+
+        option.addEventListener('click', () => navigate('dumb-charades'));
       })();
 
       /* ════════════════════════════════════════════════════════════════
