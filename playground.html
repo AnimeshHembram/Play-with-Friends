@@ -2231,6 +2231,78 @@
         font-weight: 600;
       }
 
+      /* A written task card is a button: tap it once the task is done. */
+      .card-task {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 4px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .card-task:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      .card-task[aria-disabled='true'] {
+        cursor: default;
+      }
+
+      /* Done: a red line from the top-left corner to the bottom-right. */
+      .card-face[data-done] .card-text {
+        opacity: 0.55;
+      }
+
+      .card-strike {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      .card-strike line {
+        stroke: #d32f2f;
+        stroke-width: 5px;
+        stroke-linecap: round;
+      }
+
+      /* Drawn in from the top-left corner. */
+      @media (prefers-reduced-motion: no-preference) {
+        .card-strike[data-new] {
+          animation: strike-draw 280ms ease-out both;
+        }
+      }
+
+      @keyframes strike-draw {
+        from {
+          clip-path: inset(0 100% 100% 0);
+        }
+        to {
+          clip-path: inset(0 0 0 0);
+        }
+      }
+
+      .hand-tip {
+        margin: calc(-1 * var(--space-3)) 0 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+
+      @media (forced-colors: active) {
+        .card-strike line {
+          stroke: CanvasText;
+        }
+      }
+
       .card-rank {
         position: absolute;
         top: 3px;
@@ -3235,6 +3307,9 @@
           </button>
         </div>
         <p class="hand-sub" id="hand-sub"></p>
+        <p class="hand-tip" id="hand-tip" hidden>
+          Tap a task card when it's done. A done card can't be unmarked.
+        </p>
         <ul class="hand-cards" id="hand-cards"></ul>
         <div class="picker-actions">
           <button type="submit" class="action-button" id="hand-done">Done</button>
@@ -4861,6 +4936,7 @@
         const handTitle = document.getElementById('hand-title');
         const handSub = document.getElementById('hand-sub');
         const handCards = document.getElementById('hand-cards');
+        const handTip = document.getElementById('hand-tip');
 
         /** Fisher–Yates with the crypto generator: every order equally likely. */
         function shuffledDeck() {
@@ -5054,9 +5130,15 @@
           );
           handTitle.textContent = `Player ${i + 1}'s hand`;
           const blanks = custom ? hand.filter((c) => !c.text).length : 0;
-          handSub.textContent =
-            `${hand.length} card${hand.length === 1 ? '' : 's'}` +
-            (blanks ? ` (${blanks} blank)` : '');
+          const updateSub = () => {
+            const done = custom ? hand.filter((c) => c.done).length : 0;
+            handSub.textContent =
+              `${hand.length} card${hand.length === 1 ? '' : 's'}` +
+              (blanks ? ` (${blanks} blank)` : '') +
+              (done ? ` · ${done} done` : '');
+            handTip.hidden = !hand.some((c) => c.text && !c.done);
+          };
+          updateSub();
           handCards.toggleAttribute('data-custom', custom);
           handCards.replaceChildren(
             ...hand.map((card) => {
@@ -5069,8 +5151,32 @@
                   textContent: card.text || 'Blank',
                 });
                 text.setAttribute('aria-hidden', 'true');
-                if (!card.text) li.dataset.blank = '';
-                li.append(text);
+                if (!card.text) {
+                  li.dataset.blank = '';
+                  li.append(text);
+                  return li;
+                }
+                // Written task: tap once it's done. Marking is permanent (no cheating).
+                const task = document.createElement('button');
+                task.type = 'button';
+                task.className = 'card-task';
+                task.append(text);
+                li.append(task);
+                const showDone = (animate) => {
+                  li.dataset.done = '';
+                  task.setAttribute('aria-disabled', 'true');
+                  task.setAttribute('aria-label', `${card.text}, done`);
+                  li.append(strikeLine(animate));
+                };
+                if (card.done) showDone(false);
+                else task.setAttribute('aria-label', `Mark done: ${card.text}`);
+                task.addEventListener('click', () => {
+                  if (card.done) return;
+                  card.done = true;
+                  showDone(true);
+                  updateSub();
+                  announcer.textContent = `Done: ${card.text}.`;
+                });
                 return li;
               }
               if (SUITS[card.s].red) li.dataset.red = '';
@@ -5090,7 +5196,29 @@
             }),
           );
           handDialog.showModal();
-          document.getElementById('hand-done').focus();
+          // Focus Done without jumping to the bottom of a long hand.
+          document.getElementById('hand-done').focus({ preventScroll: true });
+          handDialog.scrollTop = 0;
+        }
+
+        /** The red "done" line, corner to corner (top-left → bottom-right). */
+        function strikeLine(animate) {
+          const svg = document.createElementNS(SVG_NS, 'svg');
+          svg.setAttribute('class', 'card-strike');
+          svg.setAttribute('viewBox', '0 0 100 100');
+          svg.setAttribute('preserveAspectRatio', 'none');
+          svg.setAttribute('aria-hidden', 'true');
+          if (animate) svg.dataset.new = '';
+          const line = document.createElementNS(SVG_NS, 'line');
+          [
+            ['x1', '6'],
+            ['y1', '6'],
+            ['x2', '94'],
+            ['y2', '94'],
+            ['vector-effect', 'non-scaling-stroke'],
+          ].forEach(([k, v]) => line.setAttribute(k, v));
+          svg.append(line);
+          return svg;
         }
 
         function closeHand() {
