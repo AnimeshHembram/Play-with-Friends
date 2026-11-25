@@ -1855,6 +1855,10 @@
         filter: drop-shadow(6px 6px 0 var(--color-text));
       }
 
+      .deck-pack svg[hidden] {
+        display: none;
+      }
+
       .deck-pack svg {
         display: block;
         width: 100%;
@@ -1877,6 +1881,13 @@
       }
       .pack-ink {
         fill: var(--color-text);
+      }
+      .pack-label-ink {
+        fill: var(--color-text);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
       }
       .pack-label {
         fill: var(--color-on-accent);
@@ -1998,6 +2009,293 @@
         #deal-setup .stepper {
           flex: 1;
           min-width: 0;
+        }
+      }
+
+      /* ── Card › Classic Deck: the table and the deal ─────────────── */
+      .deal-table {
+        --card-w: clamp(1.75rem, 7vmin, 2.5rem);
+        position: relative;
+        width: min(100%, 32rem, calc((100dvh - 25rem) * 1.25));
+        min-width: min(15rem, calc((100dvh - 23rem) * 1.25));
+        aspect-ratio: 5 / 4;
+      }
+
+      .deal-felt {
+        position: absolute;
+        inset: 14% 12%;
+        border: 3px solid var(--color-text);
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+        box-shadow: 5px 5px 0 var(--color-text);
+      }
+
+      /* A face-down card: accent back with a fine pattern, ink outline. */
+      .card-back {
+        display: block;
+        width: var(--card-w);
+        aspect-ratio: 5 / 7;
+        border: 2px solid var(--color-text);
+        border-radius: 5px;
+        background:
+          repeating-linear-gradient(
+            45deg,
+            transparent 0 3px,
+            color-mix(in srgb, var(--color-on-accent) 28%, transparent) 3px 5px
+          ),
+          var(--color-accent);
+      }
+
+      .deal-deck {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        translate: -50% -50%;
+        font-size: 0.8125rem;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .deal-deck .card-back {
+        --card-w: clamp(2.25rem, 9vmin, 3rem);
+        box-shadow:
+          2px 2px 0 var(--color-surface),
+          4px 4px 0 var(--color-text);
+      }
+
+      .deal-deck[data-empty] {
+        visibility: hidden;
+      }
+
+      .deal-flying {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 2;
+        translate: -50% -50%;
+        pointer-events: none;
+      }
+
+      .deal-seats {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .deal-seat {
+        position: absolute;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        min-width: var(--tap-min);
+        min-height: var(--tap-min);
+        padding: 2px 4px;
+        translate: -50% -50%;
+        border: 0;
+        border-radius: 8px;
+        background: none;
+        color: var(--color-text);
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 750;
+        line-height: 1.1;
+        cursor: pointer;
+      }
+
+      .deal-seat:disabled {
+        cursor: default;
+      }
+
+      .deal-seat:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 2px;
+      }
+
+      .seat-stack {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-width: var(--card-w);
+        aspect-ratio: 5 / 7;
+        border: 2px dashed var(--color-border);
+        border-radius: 5px;
+      }
+
+      .seat-stack .card-back {
+        position: absolute;
+        inset: -2px;
+        width: auto;
+      }
+
+      .deal-seat[data-has-cards] .seat-stack {
+        border-color: transparent;
+      }
+
+      .deal-seat[data-has-cards] .seat-stack .card-back {
+        box-shadow: 2px 2px 0 var(--color-text);
+      }
+
+      .seat-count {
+        position: absolute;
+        right: -0.6rem;
+        bottom: -0.45rem;
+        z-index: 1;
+        min-width: 1.35rem;
+        padding: 1px 4px;
+        border: 2px solid var(--color-text);
+        border-radius: 999px;
+        background: var(--color-surface);
+        font-size: 0.6875rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .deal-seat[data-bump] .seat-stack {
+          animation: seat-bump 160ms var(--ease);
+        }
+      }
+
+      @keyframes seat-bump {
+        50% {
+          scale: 1.12;
+        }
+      }
+
+      .deal-actions {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-4);
+      }
+
+      .deal-actions .roll-button {
+        min-width: 10rem;
+      }
+
+      .deal-actions [aria-disabled='true'] {
+        cursor: progress;
+      }
+
+      /* A player's hand (popup): real-looking card faces. */
+      .hand-sub {
+        margin: calc(-1 * var(--space-2)) 0 0;
+        color: var(--color-text-muted);
+      }
+
+      .hand-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(3.1rem, 1fr));
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .card-face {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 5 / 7;
+        border: 2px solid #111111;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #111111;
+        font-weight: 800;
+      }
+
+      .card-face[data-red] {
+        color: #c62828;
+      }
+
+      /* Custom Challenge Cards: the player's own text (or a blank card). */
+      .hand-cards[data-custom] {
+        grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+      }
+
+      .card-text {
+        padding: 0.45rem;
+        font-size: 0.8125rem;
+        font-weight: 750;
+        line-height: 1.2;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      .card-face[data-blank] {
+        color: #9e9e9e;
+        font-weight: 600;
+      }
+
+      .card-rank {
+        position: absolute;
+        top: 3px;
+        left: 5px;
+        font-size: 0.875rem;
+        line-height: 1;
+      }
+
+      .card-suit {
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      @media (forced-colors: active) {
+        .deal-felt,
+        .deal-deck .card-back,
+        .deal-seat[data-has-cards] .seat-stack .card-back {
+          box-shadow: none;
+        }
+      }
+
+      /* Short portrait phones: tighter spacing and buttons so it all fits. */
+      @media (orientation: portrait) and (max-height: 42rem) {
+        .rp-game[data-dealt] {
+          gap: var(--space-3);
+        }
+        .rp-game[data-dealt] h1 {
+          font-size: 1.375rem;
+        }
+        .rp-game[data-dealt] .deal-status {
+          font-size: 0.9375rem;
+        }
+        .rp-game[data-dealt] .deal-table {
+          width: min(100%, calc((100dvh - 24rem) * 1.25));
+          min-width: 12.5rem;
+        }
+        .deal-actions {
+          gap: var(--space-3);
+        }
+        .deal-actions .roll-button {
+          min-height: var(--tap-min);
+          font-size: 1.0625rem;
+        }
+      }
+
+      /* Short landscape phones: the table on the left, the rest beside it. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .rp-game[data-dealt] {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          column-gap: var(--space-6);
+          row-gap: var(--space-2);
+          align-items: center;
+          max-width: 52rem;
+        }
+        .rp-game[data-dealt] .deal-table {
+          grid-row: 1 / span 5;
+          width: min(calc((100dvh - 8.5rem) * 1.25), 55vw);
+          min-width: 12rem;
+        }
+        .rp-game[data-dealt] > :not(.deal-table) {
+          grid-column: 2;
+        }
+        .rp-game[data-dealt] .deal-status {
+          font-size: 0.9375rem;
         }
       }
 
@@ -2511,7 +2809,65 @@
           </div>
           <!-- Card › Classic Deck: a sealed pack -->
           <div class="deck-pack" id="deck-pack" hidden>
-            <svg viewBox="0 0 180 240" role="img" aria-label="A sealed pack of 52 playing cards">
+            <svg
+              class="pack-art"
+              id="pack-custom"
+              viewBox="0 0 180 240"
+              role="img"
+              aria-label="A sealed pack of 52 blank cards"
+              hidden
+            >
+              <rect
+                class="pack-face pack-line"
+                x="6"
+                y="30"
+                width="168"
+                height="204"
+                rx="12"
+                stroke-width="5"
+              />
+              <rect
+                class="pack-body pack-line"
+                x="6"
+                y="6"
+                width="168"
+                height="46"
+                rx="10"
+                stroke-width="5"
+              />
+              <rect
+                class="pack-seal pack-line"
+                x="78"
+                y="0"
+                width="24"
+                height="64"
+                rx="3"
+                stroke-width="4"
+              />
+              <rect
+                class="pack-body pack-line"
+                x="40"
+                y="80"
+                width="100"
+                height="112"
+                rx="50"
+                stroke-width="4"
+              />
+              <path
+                class="pack-seal pack-line"
+                stroke-width="3"
+                stroke-linejoin="round"
+                d="M90 104l9.4 19 21 3-15.2 14.8 3.6 20.9L90 151.8l-18.8 9.9 3.6-20.9L59.6 126l21-3z"
+              />
+              <text class="pack-label-ink" x="90" y="218" text-anchor="middle">BLANK CARDS</text>
+            </svg>
+            <svg
+              class="pack-art"
+              id="pack-classic"
+              viewBox="0 0 180 240"
+              role="img"
+              aria-label="A sealed pack of 52 playing cards"
+            >
               <rect
                 class="pack-body pack-line"
                 x="6"
@@ -2556,9 +2912,21 @@
               <text class="pack-label" x="90" y="218" text-anchor="middle">52 CARDS</text>
             </svg>
           </div>
+          <div class="deal-table" id="deal-table" hidden>
+            <div class="deal-felt"></div>
+            <div class="deal-deck" id="deal-deck" aria-hidden="true">
+              <span class="card-back"></span>
+              <span id="deal-deck-count">52</span>
+            </div>
+            <ol class="deal-seats" id="deal-seats" aria-label="Players"></ol>
+          </div>
           <p class="deal-status" id="deal-status" hidden></p>
           <div class="deal-actions" id="deal-actions" hidden>
+            <button type="button" class="text-button" id="cards-open" hidden>Write cards</button>
             <button type="button" class="text-button" id="deal-setup-open">Set up players</button>
+            <button type="button" class="action-button roll-button" id="deal-again" hidden>
+              Deal again
+            </button>
           </div>
 
           <!-- Spinning Wheel -->
@@ -2787,6 +3155,89 @@
           >
             PRESS
           </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Card › Custom Challenge Cards: write on the blank cards -->
+    <dialog
+      class="mode-picker"
+      id="cards-setup"
+      aria-labelledby="cards-setup-title"
+      aria-describedby="cards-setup-intro"
+    >
+      <form method="dialog" id="cards-setup-form" novalidate>
+        <div class="picker-header">
+          <h2 id="cards-setup-title">Write your cards</h2>
+          <button type="button" class="icon-button" id="cards-setup-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p class="wheel-setup-intro" id="cards-setup-intro">
+          Write a challenge on as many cards as you like. Cards you don't write on stay blank.
+        </p>
+
+        <div class="wheel-add">
+          <label for="cards-input" class="visually-hidden">New card</label>
+          <input
+            type="text"
+            id="cards-input"
+            maxlength="60"
+            autocomplete="off"
+            enterkeyhint="enter"
+            placeholder="e.g. Sing a song"
+          />
+          <button type="button" class="text-button" id="cards-add">Add</button>
+        </div>
+
+        <p class="wheel-count" id="cards-count" aria-live="polite">0 written · 52 blank</p>
+        <ol class="wheel-list" id="cards-list" aria-label="Your cards"></ol>
+
+        <p class="picker-hint" id="cards-hint">Write at least 1 card.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="cards-cancel">Cancel</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="cards-next"
+            disabled
+            aria-describedby="cards-hint"
+          >
+            Next
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Card › Classic Deck: one player's hand -->
+    <dialog class="mode-picker" id="hand-dialog" aria-labelledby="hand-title">
+      <form method="dialog">
+        <div class="picker-header">
+          <h2 id="hand-title">Player 1's hand</h2>
+          <button type="button" class="icon-button" id="hand-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="hand-sub" id="hand-sub"></p>
+        <ul class="hand-cards" id="hand-cards"></ul>
+        <div class="picker-actions">
+          <button type="submit" class="action-button" id="hand-done">Done</button>
         </div>
       </form>
     </dialog>
@@ -4282,12 +4733,12 @@
           if (!chosen) return;
           lastDeck = chosen.value;
           deckPicker.close();
-          setupOnArrival = chosen.value === 'classic'; // the classic deck asks for players
+          setupOnArrival = true; // the deck asks for its setup once the pack is shown
           navigate('random-picker', 'card/' + chosen.value);
         });
 
         /* ── Card › Classic Deck: sealed pack + "Set up the deal" ────────
-           Kept in memory for this tab only. Dealing comes in a later step. */
+           Shared by Classic Deck and Custom Challenge Cards; memory only. */
         const PLAYERS_MIN = 2;
         const PLAYERS_MAX = 12;
         const deckPack = document.getElementById('deck-pack');
@@ -4301,8 +4752,23 @@
         const dealSubmit = document.getElementById('deal-setup-submit');
         const dealHint = document.getElementById('deal-hint');
         const DIRECTION_NAMES = { clockwise: 'clockwise', anticlockwise: 'anticlockwise' };
-        const deal = { players: null, direction: null, timer: 0 };
-        let setupOnArrival = false; // set when the deck popup opens the classic deck
+        // Each deck keeps its own setup and deal (this tab only).
+        const DECK_STATE = {
+          classic: {
+            deal: { players: null, direction: null, timer: 0 },
+            dealt: { hands: null, dealing: false, token: 0, seat: null },
+          },
+          custom: {
+            deal: { players: null, direction: null, timer: 0 },
+            dealt: { hands: null, dealing: false, token: 0, seat: null },
+          },
+        };
+        let currentDeck = 'classic';
+        let deal = DECK_STATE.classic.deal;
+        let dealt = DECK_STATE.classic.dealt;
+        let setupOnArrival = false; // set when the deck popup opens a deck
+        const DECK_SIZE = 52;
+        let customCards = []; // the text written on the custom deck's cards
 
         function parsePlayers(text) {
           const clean = text.trim();
@@ -4345,11 +4811,20 @@
 
         function closeDealSetup() {
           dealSetup.close();
-          dealOpenButton.focus();
+          (dealOpenButton.hidden ? cardsOpenButton : dealOpenButton).focus();
         }
 
         function showDealStatus() {
-          if (deal.players) {
+          const custom = currentDeck === 'custom';
+          cardsOpenButton.hidden = !custom;
+          cardsOpenButton.textContent = customCards.length ? 'Edit cards' : 'Write cards';
+          dealOpenButton.hidden = custom && !customCards.length;
+          if (custom && !customCards.length) {
+            dealStatus.textContent = 'Write your cards to start.';
+          } else if (custom && !deal.players) {
+            dealStatus.textContent = `${writtenSummary()}. Set up the players to deal.`;
+            dealOpenButton.textContent = 'Set up players';
+          } else if (deal.players) {
             dealStatus.innerHTML = '';
             dealStatus.append(
               'Ready to deal to ',
@@ -4365,15 +4840,429 @@
           }
         }
 
-        function showClassicScreen() {
-          stage.hidden = true;
-          deckPack.hidden = false;
-          dealStatus.hidden = false;
-          dealActions.hidden = false;
-          showDealStatus();
+        /* ── Dealing ─────────────────────────────────────────────────────
+           A fresh, fairly shuffled 52-card deck is dealt one card at a
+           time around the table, starting with Player 1, in the chosen
+           direction, until every card is dealt. */
+        const SUITS = [
+          { symbol: '♠', name: 'spades', red: false },
+          { symbol: '♥', name: 'hearts', red: true },
+          { symbol: '♣', name: 'clubs', red: false },
+          { symbol: '♦', name: 'diamonds', red: true },
+        ];
+        const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const RANK_NAMES = { A: 'Ace', J: 'Jack', Q: 'Queen', K: 'King' };
+        const dealTable = document.getElementById('deal-table');
+        const dealDeck = document.getElementById('deal-deck');
+        const dealDeckCount = document.getElementById('deal-deck-count');
+        const dealSeats = document.getElementById('deal-seats');
+        const dealAgain = document.getElementById('deal-again');
+        const handDialog = document.getElementById('hand-dialog');
+        const handTitle = document.getElementById('hand-title');
+        const handSub = document.getElementById('hand-sub');
+        const handCards = document.getElementById('hand-cards');
+
+        /** Fisher–Yates with the crypto generator: every order equally likely. */
+        function shuffledDeck() {
+          const deck = [];
+          if (currentDeck === 'custom') {
+            // The written cards, then blank ones up to 52 (i keeps the written order).
+            for (let i = 0; i < DECK_SIZE; i++) deck.push({ text: customCards[i] ?? '', i });
+          } else {
+            SUITS.forEach((suit, s) => RANKS.forEach((rank, r) => deck.push({ s, r })));
+          }
+          for (let i = deck.length - 1; i > 0; i--) {
+            const j = randomUpTo(i + 1) - 1;
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+          }
+          return deck;
         }
 
-        dealOpenButton.addEventListener('click', openDealSetup);
+        /** Seat order for the deal: 1, 2, 3… clockwise; 1, N, N−1… anticlockwise. */
+        function dealOrder(players, direction) {
+          return Array.from({ length: players }, (_, k) =>
+            direction === 'clockwise' ? k : (players - k) % players,
+          );
+        }
+
+        function cardName(card) {
+          if (card.text !== undefined) return card.text || 'Blank card';
+          const rank = RANKS[card.r];
+          return `${RANK_NAMES[rank] ?? rank} of ${SUITS[card.s].name}`;
+        }
+
+        /* Seats sit around the table, numbered clockwise from the bottom
+           (screen angles grow clockwise because y points down). */
+        function buildSeats(players) {
+          dealSeats.replaceChildren(
+            ...Array.from({ length: players }, (_, i) => {
+              const angle = Math.PI / 2 + (i * 2 * Math.PI) / players;
+              const li = document.createElement('li');
+              const seat = document.createElement('button');
+              seat.type = 'button';
+              seat.className = 'deal-seat';
+              seat.style.left = `${50 + 44 * Math.cos(angle)}%`;
+              seat.style.top = `${50 + 42 * Math.sin(angle)}%`;
+              seat.dataset.player = String(i);
+              seat.disabled = true;
+              const stack = document.createElement('span');
+              stack.className = 'seat-stack';
+              const count = document.createElement('span');
+              count.className = 'seat-count';
+              count.textContent = '0';
+              stack.append(count);
+              const name = document.createElement('span');
+              name.textContent = 'P' + (i + 1);
+              seat.append(stack, name);
+              seat.setAttribute('aria-label', `Player ${i + 1}, no cards yet`);
+              seat.addEventListener('click', () => openHand(i, seat));
+              li.append(seat);
+              return li;
+            }),
+          );
+        }
+
+        function setSeatCount(i, n, bump) {
+          const seat = dealSeats.children[i]?.firstElementChild;
+          if (!seat) return;
+          const stack = seat.querySelector('.seat-stack');
+          seat.querySelector('.seat-count').textContent = String(n);
+          if (n > 0 && !stack.querySelector('.card-back')) {
+            stack.prepend(
+              Object.assign(document.createElement('span'), { className: 'card-back' }),
+            );
+            seat.dataset.hasCards = '';
+          }
+          seat.setAttribute(
+            'aria-label',
+            `Player ${i + 1}, ${n} card${n === 1 ? '' : 's'}. Show hand`,
+          );
+          if (bump) {
+            seat.removeAttribute('data-bump');
+            void seat.offsetWidth;
+            seat.dataset.bump = '';
+          }
+        }
+
+        function setDealBusy(busy) {
+          dealt.dealing = busy;
+          [dealOpenButton, dealAgain].forEach((b) =>
+            busy ? b.setAttribute('aria-disabled', 'true') : b.removeAttribute('aria-disabled'),
+          );
+          [...dealSeats.querySelectorAll('.deal-seat')].forEach((b) => (b.disabled = busy));
+        }
+
+        function dealSummary() {
+          const counts = dealt.hands.map((h) => h.length);
+          const lo = Math.min(...counts);
+          const hi = Math.max(...counts);
+          const each = lo === hi ? `${lo} cards each` : `${hi} or ${lo} cards each`;
+          return `Dealt to ${deal.players} players, ${DIRECTION_NAMES[deal.direction]}: ${each}.`;
+        }
+
+        function finishDeal(quiet = false) {
+          setDealBusy(false);
+          dealDeck.dataset.empty = '';
+          dealDeckCount.textContent = '0';
+          dealStatus.textContent = dealSummary() + ' Tap a player to see their cards.';
+          if (!quiet) announcer.textContent = dealSummary();
+          dealAgain.textContent = 'Deal again';
+        }
+
+        /** Shuffles and deals; animated unless reduced motion is on. */
+        function startDeal() {
+          if (dealt.dealing) return;
+          const token = ++dealt.token;
+          const players = deal.players;
+          const order = dealOrder(players, deal.direction);
+          const deck = shuffledDeck();
+          const hands = Array.from({ length: players }, () => []);
+          const plan = deck.map((card, k) => ({ card, seat: order[k % players] }));
+          plan.forEach(({ card, seat }) => hands[seat].push(card));
+          dealt.hands = hands;
+
+          showDealtLayout();
+          buildSeats(players);
+          dealDeck.removeAttribute('data-empty');
+          dealDeckCount.textContent = '52';
+          announcer.textContent = '';
+          dealStatus.textContent = `Dealing to ${players} players, ${DIRECTION_NAMES[deal.direction]}…`;
+
+          if (reducedMotion.matches) {
+            hands.forEach((h, i) => setSeatCount(i, h.length, false));
+            return finishDeal();
+          }
+          setDealBusy(true);
+          const tableBox = dealTable.getBoundingClientRect();
+          const counts = new Array(players).fill(0);
+          const STEP = 50; // ms between cards
+          const FLIGHT = 280; // ms each card is in the air
+          plan.forEach(({ seat }, k) => {
+            setTimeout(() => {
+              if (token !== dealt.token) return;
+              dealDeckCount.textContent = String(51 - k);
+              if (k === 51) dealDeck.dataset.empty = '';
+              const target = dealSeats.children[seat].firstElementChild;
+              const box = target.querySelector('.seat-stack').getBoundingClientRect();
+              const dx = box.left + box.width / 2 - (tableBox.left + tableBox.width / 2);
+              const dy = box.top + box.height / 2 - (tableBox.top + tableBox.height / 2);
+              const flying = Object.assign(document.createElement('span'), {
+                className: 'card-back deal-flying',
+              });
+              flying.setAttribute('aria-hidden', 'true');
+              dealTable.append(flying);
+              const spin = (seat % 2 ? 1 : -1) * (90 + (k % 3) * 30);
+              flying
+                .animate(
+                  [
+                    { transform: 'translate(0, 0) rotate(0deg)' },
+                    { transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg)` },
+                  ],
+                  { duration: FLIGHT, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' },
+                )
+                .finished.catch(() => {})
+                .then(() => {
+                  flying.remove();
+                  if (token !== dealt.token) return;
+                  counts[seat]++;
+                  setSeatCount(seat, counts[seat], true);
+                  if (k === 51) finishDeal();
+                });
+            }, k * STEP);
+          });
+        }
+
+        function cancelDeal() {
+          dealt.token++;
+          dealTable.querySelectorAll('.deal-flying').forEach((c) => c.remove());
+          if (dealt.dealing && dealt.hands) {
+            // Snap to the finished deal rather than leaving it half done.
+            dealt.hands.forEach((h, i) => setSeatCount(i, h.length, false));
+            finishDeal(true);
+          }
+          setDealBusy(false);
+        }
+
+        function openHand(i, seat) {
+          if (dealt.dealing || !dealt.hands) return;
+          dealt.seat = seat;
+          const custom = currentDeck === 'custom';
+          const hand = [...dealt.hands[i]].sort(
+            custom
+              ? (a, b) => (a.text ? 0 : 1) - (b.text ? 0 : 1) || a.i - b.i // written first
+              : (a, b) => a.s - b.s || a.r - b.r,
+          );
+          handTitle.textContent = `Player ${i + 1}'s hand`;
+          const blanks = custom ? hand.filter((c) => !c.text).length : 0;
+          handSub.textContent =
+            `${hand.length} card${hand.length === 1 ? '' : 's'}` +
+            (blanks ? ` (${blanks} blank)` : '');
+          handCards.toggleAttribute('data-custom', custom);
+          handCards.replaceChildren(
+            ...hand.map((card) => {
+              const li = document.createElement('li');
+              li.className = 'card-face';
+              if (custom) {
+                li.setAttribute('aria-label', cardName(card));
+                const text = Object.assign(document.createElement('span'), {
+                  className: 'card-text',
+                  textContent: card.text || 'Blank',
+                });
+                text.setAttribute('aria-hidden', 'true');
+                if (!card.text) li.dataset.blank = '';
+                li.append(text);
+                return li;
+              }
+              if (SUITS[card.s].red) li.dataset.red = '';
+              li.setAttribute('aria-label', cardName(card));
+              const rank = Object.assign(document.createElement('span'), {
+                className: 'card-rank',
+                textContent: RANKS[card.r],
+              });
+              const suit = Object.assign(document.createElement('span'), {
+                className: 'card-suit',
+                textContent: SUITS[card.s].symbol + '\uFE0E', // text style, not emoji
+              });
+              rank.setAttribute('aria-hidden', 'true');
+              suit.setAttribute('aria-hidden', 'true');
+              li.append(rank, suit);
+              return li;
+            }),
+          );
+          handDialog.showModal();
+          document.getElementById('hand-done').focus();
+        }
+
+        function closeHand() {
+          if (handDialog.open) handDialog.close();
+        }
+
+        handDialog.addEventListener('close', () => dealt.seat?.focus());
+        document.getElementById('hand-close').addEventListener('click', closeHand);
+        handDialog.addEventListener('click', (event) => {
+          if (event.target === handDialog) closeHand(); // backdrop
+        });
+        dealAgain.addEventListener('click', () => {
+          if (!dealt.dealing) startDeal();
+        });
+
+        /** Table view (after a deal) vs. sealed pack (before). */
+        function showDealtLayout() {
+          deckPack.hidden = true;
+          dealTable.hidden = false;
+          dealAgain.hidden = false;
+          screenEl.dataset.dealt = '';
+        }
+
+        /** Switches the dealing machinery to one deck's own setup and deal. */
+        function useDeck(deck) {
+          currentDeck = deck;
+          ({ deal, dealt } = DECK_STATE[deck]);
+          // (SVG elements have no .hidden property, so toggle the attribute.)
+          document.getElementById('pack-classic').toggleAttribute('hidden', deck !== 'classic');
+          document.getElementById('pack-custom').toggleAttribute('hidden', deck !== 'custom');
+        }
+
+        function showClassicScreen() {
+          stage.hidden = true;
+          dealStatus.hidden = false;
+          dealActions.hidden = false;
+          if (dealt.hands && dealt.hands.length === deal.players) {
+            // Coming back to a finished deal: show it as it was.
+            showDealtLayout();
+            buildSeats(deal.players);
+            dealt.hands.forEach((h, i) => setSeatCount(i, h.length, false));
+            finishDeal(true);
+            dealOpenButton.textContent = 'Change setup';
+            dealOpenButton.hidden = false;
+            cardsOpenButton.hidden = currentDeck !== 'custom';
+            cardsOpenButton.textContent = 'Edit cards';
+          } else {
+            deckPack.hidden = false;
+            dealTable.hidden = true;
+            dealAgain.hidden = true;
+            delete screenEl.dataset.dealt;
+            showDealStatus();
+          }
+        }
+
+        /* ── Custom Challenge Cards: "Write your cards" popup ────────── */
+        const cardsOpenButton = document.getElementById('cards-open');
+        const cardsSetup = document.getElementById('cards-setup');
+        const cardsForm = document.getElementById('cards-setup-form');
+        const cardsInput = document.getElementById('cards-input');
+        const cardsAdd = document.getElementById('cards-add');
+        const cardsList = document.getElementById('cards-list');
+        const cardsCount = document.getElementById('cards-count');
+        const cardsHint = document.getElementById('cards-hint');
+        const cardsNext = document.getElementById('cards-next');
+        let cardsDraft = [];
+
+        function writtenSummary(count = customCards.length) {
+          return `${count} written · ${DECK_SIZE - count} blank`;
+        }
+
+        function renderCards(focusIndex) {
+          cardsList.replaceChildren(
+            ...cardsDraft.map((text, i) => {
+              const li = document.createElement('li');
+              const label = Object.assign(document.createElement('span'), {
+                className: 'wheel-item-text',
+                textContent: text,
+              });
+              const remove = document.createElement('button');
+              remove.type = 'button';
+              remove.className = 'icon-button';
+              remove.setAttribute('aria-label', 'Remove ' + text);
+              remove.innerHTML = removeIcon;
+              remove.addEventListener('click', () => {
+                cardsDraft.splice(i, 1);
+                renderCards(i);
+              });
+              li.append(label, remove);
+              return li;
+            }),
+          );
+          const full = cardsDraft.length >= DECK_SIZE;
+          cardsCount.textContent = writtenSummary(cardsDraft.length);
+          cardsInput.disabled = full;
+          cardsAdd.disabled = full;
+          cardsNext.disabled = cardsDraft.length === 0;
+          cardsHint.hidden = cardsDraft.length > 0 && !full;
+          cardsHint.textContent = full
+            ? `All ${DECK_SIZE} cards are written.`
+            : 'Write at least 1 card.';
+          if (focusIndex !== undefined) {
+            const buttons = cardsList.querySelectorAll('button');
+            (buttons[Math.min(focusIndex, buttons.length - 1)] || cardsInput).focus();
+          }
+        }
+
+        function addCard() {
+          const text = cardsInput.value.trim().replace(/\s+/g, ' ');
+          if (!text || cardsDraft.length >= DECK_SIZE) {
+            cardsInput.focus();
+            return;
+          }
+          cardsDraft.push(text);
+          cardsInput.value = '';
+          renderCards();
+          cardsList.lastElementChild?.scrollIntoView({ block: 'nearest' });
+          (cardsInput.disabled ? cardsNext : cardsInput).focus();
+        }
+
+        function openCardsSetup() {
+          clearTimeout(deal.timer);
+          cardsDraft = [...customCards];
+          cardsInput.value = '';
+          renderCards();
+          cardsSetup.showModal();
+          (cardsInput.disabled ? cardsNext : cardsInput).focus();
+        }
+
+        function closeCardsSetup() {
+          cardsSetup.close();
+          cardsOpenButton.focus();
+        }
+
+        cardsOpenButton.addEventListener('click', () => {
+          if (!dealt.dealing) openCardsSetup();
+        });
+        cardsAdd.addEventListener('click', addCard);
+        cardsInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Enter adds the card; Next moves on
+            addCard();
+          }
+        });
+        document.getElementById('cards-setup-close').addEventListener('click', closeCardsSetup);
+        document.getElementById('cards-cancel').addEventListener('click', closeCardsSetup);
+        cardsSetup.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeCardsSetup();
+        });
+        cardsSetup.addEventListener('click', (event) => {
+          if (event.target === cardsSetup) closeCardsSetup(); // backdrop
+        });
+        cardsForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (!cardsDraft.length) return;
+          const changed = cardsDraft.join('\n') !== customCards.join('\n');
+          customCards = [...cardsDraft];
+          cardsSetup.close();
+          if (changed && dealt.hands) {
+            // New cards: put the old deal away; the pack is sealed again.
+            dealt.hands = null;
+            showClassicScreen();
+          } else {
+            showDealStatus();
+          }
+          openDealSetup(); // ready: now ask for the players and direction
+        });
+
+        dealOpenButton.addEventListener('click', () => {
+          if (!dealt.dealing) openDealSetup();
+        });
         playersInput.addEventListener('input', syncDeal);
         directionRadios.forEach((r) => r.addEventListener('change', syncDeal));
         document.getElementById('deal-minus').addEventListener('click', () => stepPlayers(-1));
@@ -4398,9 +5287,10 @@
           deal.players = players;
           deal.direction = direction;
           dealSetup.close();
-          showDealStatus();
-          announcer.textContent = `Ready to deal to ${players} players, ${DIRECTION_NAMES[direction]}.`;
+          dealOpenButton.textContent = 'Change setup';
+          dealOpenButton.hidden = false;
           dealOpenButton.focus();
+          startDeal(); // Distribute: shuffle and deal the cards out
         });
 
         /** Splits a route param such as number/50 or card/classic. */
@@ -4444,8 +5334,10 @@
             wheelResult.hidden = true;
             wheelActions.hidden = true;
             deckPack.hidden = true;
+            dealTable.hidden = true;
             dealStatus.hidden = true;
             dealActions.hidden = true;
+            delete screenEl.dataset.dealt;
             if (playable) {
               if (route.mode === 'number') resetNumberGame(route.max);
               else resetNumberGame(26, 'alphabet');
@@ -4456,12 +5348,15 @@
                 ? DECKS[route.deck].placeholder
                 : mode.placeholder;
               if (route.deck) lastDeck = route.deck;
-              if (route.deck === 'classic') {
+              if (route.deck) {
+                useDeck(route.deck);
                 showClassicScreen();
                 if (setupOnArrival) {
-                  // Let the sealed pack land, then ask for the players.
+                  // Let the sealed pack land, then ask: custom cards need writing first.
                   const wait = reducedMotion.matches ? 0 : 650;
-                  deal.timer = setTimeout(openDealSetup, wait);
+                  const ask =
+                    route.deck === 'custom' && !customCards.length ? openCardsSetup : openDealSetup;
+                  deal.timer = setTimeout(ask, wait);
                 }
               }
               if (isWheel) {
@@ -4483,6 +5378,9 @@
             setWheelBusy(false);
             clearTimeout(deal.timer); // and a deal popup that hasn't opened yet
             if (dealSetup.open) dealSetup.close();
+            if (cardsSetup.open) cardsSetup.close();
+            cancelDeal(); // a deal in progress finishes instantly
+            closeHand();
           },
         });
       })();
