@@ -2378,6 +2378,92 @@
         color: var(--color-text-muted);
       }
 
+      /* Who's Most Likely To?: level tiles, one per row with a difficulty meter. */
+      .mode-options.wml-levels {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+      .wml-levels .count-option {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: var(--space-4);
+        min-height: 4.75rem;
+        padding: var(--space-3) var(--space-5) var(--space-3) var(--space-4);
+        text-align: left;
+      }
+      .wml-level-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .wml-level-name {
+        font-size: 1.125rem;
+        font-weight: 800;
+      }
+      .wml-level-desc {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 550;
+        line-height: 1.3;
+      }
+      .wml-level-bars {
+        display: flex;
+        flex: none;
+        align-items: flex-end;
+        gap: 3px;
+        height: 1.5rem;
+      }
+      .wml-level-bars i {
+        width: 0.4rem;
+        border: 2px solid currentColor;
+        border-radius: 2px;
+      }
+      .wml-level-bars i:nth-child(1) {
+        height: 40%;
+      }
+      .wml-level-bars i:nth-child(2) {
+        height: 70%;
+      }
+      .wml-level-bars i:nth-child(3) {
+        height: 100%;
+      }
+      .wml-level-bars[data-level='1'] i:nth-child(-n + 1),
+      .wml-level-bars[data-level='2'] i:nth-child(-n + 2),
+      .wml-level-bars[data-level='3'] i {
+        background: currentColor;
+      }
+      @media (forced-colors: active) {
+        .wml-level-bars i {
+          forced-color-adjust: none;
+          border-color: CanvasText;
+        }
+        .wml-level-bars[data-level='1'] i:nth-child(-n + 1),
+        .wml-level-bars[data-level='2'] i:nth-child(-n + 2),
+        .wml-level-bars[data-level='3'] i {
+          background: CanvasText;
+        }
+      }
+
+      /* Short phones: tighter level tiles so the popup fits without scrolling. */
+      @media (orientation: portrait) and (max-height: 42rem) {
+        .mode-options.wml-levels {
+          gap: var(--space-2);
+        }
+        .wml-levels .count-option {
+          min-height: 0;
+          padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
+          gap: var(--space-3);
+        }
+        #wml-level form {
+          gap: var(--space-3);
+          padding-block: var(--space-4);
+        }
+        .wml-level-desc {
+          font-size: 0.8125rem;
+        }
+      }
+
       .hs-mode-options .count-option {
         min-height: 7.5rem;
         line-height: 1.25;
@@ -3567,6 +3653,23 @@
         .mode-options.range-options {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+        .mode-options.wml-levels {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .wml-levels .count-option {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--space-1);
+          min-height: 0;
+          padding: var(--space-2) var(--space-3);
+        }
+        .wml-levels .wml-level-bars {
+          display: none;
+        }
+        #wml-level form {
+          gap: var(--space-2);
+          padding-block: var(--space-3);
+        }
         #range-picker form {
           gap: var(--space-3);
           padding-block: var(--space-3);
@@ -3835,8 +3938,9 @@
             </div>
             <div class="hs-links" id="wml-links">
               <button type="button" class="hs-more" id="wml-tally-open">Vote tally</button>
+              <button type="button" class="hs-more" id="wml-level-open">Change level</button>
               <button type="button" class="hs-more" id="wml-edit-players">Edit players</button>
-              <button type="button" class="hs-more" id="wml-q-open">Add questions</button>
+              <button type="button" class="hs-more" id="wml-q-open" hidden>Add questions</button>
             </div>
           </div>
           <p class="visually-hidden" id="wml-announcer" role="status" aria-live="polite"></p>
@@ -4123,6 +4227,98 @@
           >
             Continue
           </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Who's Most Likely To?: level -->
+    <dialog
+      class="mode-picker"
+      id="wml-level"
+      aria-labelledby="wml-level-title"
+      aria-describedby="wml-level-intro"
+    >
+      <form method="dialog" id="wml-level-form" novalidate>
+        <div class="picker-header">
+          <h2 id="wml-level-title">Choose a level</h2>
+          <button type="button" class="icon-button" id="wml-level-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="hs-mode-intro" id="wml-level-intro">Pick one together.</p>
+        <fieldset class="count-options mode-options wml-levels">
+          <legend class="visually-hidden">Level</legend>
+          <label class="count-option">
+            <input type="radio" name="wml-level" value="easy" />
+            <span class="wml-level-bars" data-level="1" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Easy</span>
+              <span class="wml-level-desc">Easiest, softest questions</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="wml-level" value="ultimate" />
+            <span class="wml-level-bars" data-level="2" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Ultimate</span>
+              <span class="wml-level-desc">Hard, personal questions</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="wml-level" value="toughest" />
+            <span class="wml-level-bars" data-level="3" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Toughest</span>
+              <span class="wml-level-desc">18+. Add your own too</span>
+            </span>
+          </label>
+        </fieldset>
+        <p class="picker-hint" id="wml-level-hint">Choose a level to start.</p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="wml-level-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="wml-level-start"
+            disabled
+            aria-describedby="wml-level-hint"
+          >
+            Start
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Who's Most Likely To?: 18+ check for Toughest -->
+    <dialog
+      class="mode-picker"
+      id="wml-adult"
+      aria-labelledby="wml-adult-title"
+      aria-describedby="wml-adult-text"
+    >
+      <form method="dialog" id="wml-adult-form">
+        <div class="picker-header">
+          <h2 id="wml-adult-title">18+ questions</h2>
+        </div>
+        <p class="wheel-setup-intro" id="wml-adult-text">
+          Toughest has questions for adults only. Choose it only if everyone playing is 18 or older.
+        </p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="wml-adult-cancel">Cancel</button>
+          <button type="submit" class="action-button" id="wml-adult-yes">Everyone is 18+</button>
         </div>
       </form>
     </dialog>
@@ -7053,10 +7249,11 @@
           phase: 'question', // question → handoff → vote → (next voter…) → ready → results
           round: 0,
           question: null,
-          lastQuestion: null,
           bag: [], // questions still to ask, in random order
           own: [],
           onlyOwn: false,
+          level: null, // 'easy' | 'ultimate' | 'toughest' — the group picks after adding names
+          adultOk: false, // the group said everyone is 18+ (asked again after editing players)
           voter: 0, // index into players of who votes next
           votes: new Map(), // this round: candidate → votes (who voted for whom is never kept)
           voted: 0,
@@ -7250,7 +7447,8 @@
         addButton.addEventListener('click', addPlayer);
 
         /* ── Round gameplay: one phone, passed from player to player ──── */
-        const QUESTIONS = [
+        // Easy: the easiest, softest questions.
+        const EASY = [
           'become famous',
           'forget their own birthday',
           'survive a zombie apocalypse',
@@ -7312,6 +7510,117 @@
           "remember everyone's birthday",
           'fall for a prank every single time',
         ];
+        // Ultimate: hard questions that get personal.
+        const ULTIMATE = [
+          'lie to get out of plans',
+          'ghost someone after a great date',
+          "secretly read someone else's messages",
+          'hold a grudge for years',
+          'cheat in a board game and deny it',
+          'pretend to be sick to skip work',
+          'stalk their ex on social media',
+          `say "I'm on my way" while still in bed`,
+          "forget a best friend's birthday and fake it",
+          "take credit for someone else's work",
+          'start drama in the group chat',
+          'leave a friend on read for a week',
+          'borrow money and never pay it back',
+          'regift a present to the person who gave it',
+          'break up with someone over text',
+          "fake laugh at their boss's jokes",
+          'lie on their resume',
+          'cry to get out of trouble',
+          "spill a friend's secret after one drink",
+          'have a secret second Instagram account',
+          'pick a fight just to win an argument',
+          'flirt their way out of trouble',
+          "snoop through a host's cupboards",
+          'blame someone else for their mistake',
+          'ditch their friends for a date',
+          "pretend to know a song they've never heard",
+          "eat someone else's food from the fridge",
+          'screenshot a private chat and forward it',
+          'fall for a scam call',
+          'cancel plans five minutes before',
+          'be secretly competitive about everything',
+          'never admit they were wrong',
+          'reply "k" and start a fight',
+          'overshare on a first date',
+          'pretend they read the book when they only watched the movie',
+          'post a thirst trap',
+          'unfollow someone after a fight',
+          'make up an excuse with way too many details',
+          'pretend not to see someone they know in public',
+          'get the whole group kicked out somewhere',
+          "have a crush on a friend's sibling",
+          'secretly rank their friends',
+          "go through their partner's phone",
+          'pretend their phone died to avoid a call',
+          'stay friends with all their exes',
+          'lie about their age',
+          'fight strangers in the comment section',
+          "judge everyone's outfit in silence",
+          'keep a fake smile for a whole party',
+          `say "I'm fine" when they're clearly not`,
+        ];
+        // Toughest: 18+ only. The players can add their own questions too.
+        const TOUGHEST = [
+          'have a one-night stand',
+          'hook up with an ex',
+          'kiss a stranger at a party',
+          'send a spicy text to the wrong person',
+          'date two people at the same time',
+          'go skinny-dipping',
+          'have a secret crush on someone in this room',
+          'do the walk of shame',
+          'get kicked out of a bar',
+          'forget the whole night after a party',
+          'have a friends-with-benefits situation',
+          "slide into a celebrity's DMs",
+          'make out in a movie theatre',
+          'drunk-call their ex',
+          'join a dating app on a dare',
+          "have a crush on a friend's partner",
+          'get caught sneaking someone in',
+          'go on three dates in one day',
+          'kiss someone in this room',
+          'wake up with no idea how they got home',
+          "lie about how many people they've kissed",
+          "get a tattoo of a partner's name",
+          'flirt with the bartender for free drinks',
+          'throw the wildest bachelor or bachelorette party',
+          'start a fight at a club',
+          'drink straight from the bottle',
+          'send a risky photo to the wrong chat',
+          'hook up at a wedding',
+          'have a secret relationship at work',
+          'date someone 15 years older',
+          'get back with an ex for the third time',
+          'kiss a friend on a dare',
+          'leave a party with someone they just met',
+          'flirt with someone while in a relationship',
+          'do body shots',
+          'get drunk at a family function',
+          'make the first move',
+          'have a hookup they regret',
+          'fall in love with a holiday fling',
+          'meet a stranger from the internet for a date',
+          'get a love bite right before a family dinner',
+          'play strip poker',
+          'sleep all day to get over a hangover',
+          'party until sunrise',
+          'lie to their parents about where they slept',
+          'still be clubbing at 50',
+          'get dumped on their birthday',
+          'text "you up?" at 2 a.m.',
+          'fall for their best friend',
+          'keep a secret list of their crushes',
+        ];
+        const LEVELS = {
+          easy: { name: 'Easy', questions: EASY },
+          ultimate: { name: 'Ultimate', questions: ULTIMATE },
+          toughest: { name: 'Toughest', questions: TOUGHEST, own: true },
+        };
         const qCard = document.getElementById('wml-qcard');
         const qLabel = document.getElementById('wml-qlabel');
         const qText = document.getElementById('wml-qtext');
@@ -7344,18 +7653,18 @@
 
         function nextQuestion() {
           if (!state.bag.length) {
-            const list =
-              state.onlyOwn && state.own.length ? [...state.own] : [...QUESTIONS, ...state.own];
+            const level = LEVELS[state.level];
+            const own = level.own ? state.own : [];
+            const list = state.onlyOwn && own.length ? [...own] : [...level.questions, ...own];
             for (let i = list.length - 1; i > 0; i--) {
               const j = randomUpTo(i + 1) - 1;
               [list[i], list[j]] = [list[j], list[i]];
             }
             const last = list.length - 1;
-            if (last > 0 && list[last] === state.lastQuestion)
+            if (last > 0 && list[last] === state.question)
               [list[0], list[last]] = [list[last], list[0]];
             state.bag = list;
           }
-          state.lastQuestion = state.question;
           return state.bag.pop();
         }
 
@@ -7400,7 +7709,7 @@
         function showQuestion() {
           setPhase('question');
           qCard.hidden = false;
-          qLabel.textContent = `Round ${state.round}`;
+          qLabel.textContent = `Round ${state.round} · ${LEVELS[state.level].name}`;
           qText.textContent = asQuestion(state.question);
           qNote.textContent = 'Read it out loud. Then everyone votes in private, one at a time.';
           qNote.hidden = false;
@@ -7751,6 +8060,7 @@
         /* ── Setup ↔ game ───────────────────────────────────────────── */
         function showSetup() {
           state.started = false;
+          state.adultOk = false; // the players may change, so Toughest asks again
           intro.hidden = false;
           setupForm.hidden = false;
           game.hidden = true;
@@ -7767,15 +8077,105 @@
           [...state.tally.keys()].forEach((p) => {
             if (!state.players.includes(p)) state.tally.delete(p);
           });
+          qOpen.hidden = !LEVELS[state.level].own;
           beginRound();
         }
+
+        /* ── Level: chosen together after the names, changeable later ── */
+        const levelDialog = document.getElementById('wml-level');
+        const levelForm = document.getElementById('wml-level-form');
+        const levelRadios = [...levelForm.elements['wml-level']];
+        const levelStart = document.getElementById('wml-level-start');
+        const levelBack = document.getElementById('wml-level-back');
+        const levelHint = document.getElementById('wml-level-hint');
+        const levelOpen = document.getElementById('wml-level-open');
+        const adultDialog = document.getElementById('wml-adult');
+        const toughRadio = levelRadios.find((r) => r.value === 'toughest');
+        let levelFromGame = false;
+
+        function syncLevel() {
+          const picked = levelRadios.find((r) => r.checked);
+          levelStart.disabled = !picked;
+          levelHint.hidden = !!picked;
+        }
+
+        function openLevel(fromGame) {
+          levelFromGame = fromGame;
+          // Toughest stays picked only while the 18+ answer still holds.
+          const keep = state.level && (state.level !== 'toughest' || state.adultOk);
+          levelRadios.forEach((r) => (r.checked = keep && r.value === state.level));
+          levelBack.textContent = fromGame ? 'Cancel' : 'Back';
+          levelStart.textContent = fromGame ? 'Play this level' : 'Start';
+          syncLevel();
+          levelDialog.showModal();
+          (levelRadios.find((r) => r.checked) || levelRadios[0]).focus();
+        }
+
+        function closeLevel() {
+          levelDialog.close();
+          (levelFromGame ? levelOpen : startButton).focus();
+        }
+
+        levelRadios.forEach((r) => r.addEventListener('change', syncLevel));
+        /* Toughest needs a yes from the group each time it's picked. */
+        toughRadio.addEventListener('change', () => {
+          if (!toughRadio.checked || state.adultOk) return;
+          toughRadio.checked = false;
+          syncLevel();
+          adultDialog.showModal();
+          document.getElementById('wml-adult-cancel').focus();
+        });
+        document.getElementById('wml-adult-form').addEventListener('submit', (event) => {
+          event.preventDefault();
+          adultDialog.close();
+          state.adultOk = true;
+          toughRadio.checked = true;
+          syncLevel();
+          toughRadio.focus();
+        });
+        const closeAdult = () => {
+          adultDialog.close();
+          syncLevel();
+          (levelRadios.find((r) => r.checked) || toughRadio).focus();
+        };
+        document.getElementById('wml-adult-cancel').addEventListener('click', closeAdult);
+        adultDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeAdult();
+        });
+
+        levelBack.addEventListener('click', closeLevel);
+        document.getElementById('wml-level-close').addEventListener('click', closeLevel);
+        levelDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeLevel();
+        });
+        levelDialog.addEventListener('click', (event) => {
+          if (event.target === levelDialog) closeLevel();
+        });
+        levelForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const picked = levelRadios.find((r) => r.checked);
+          if (!picked) return;
+          const changed = picked.value !== state.level;
+          levelDialog.close();
+          if (levelFromGame && !changed) return levelOpen.focus();
+          state.level = picked.value;
+          state.bag = []; // fresh questions from the new level
+          const name = LEVELS[state.level].name;
+          showGame();
+          primary.focus();
+          announcer.textContent = levelFromGame
+            ? `Level changed to ${name}. Round ${state.round}. ${asQuestion(state.question)}`
+            : `Starting with ${state.players.length} players on ${name}. ${asQuestion(state.question)}`;
+        });
+
+        levelOpen.addEventListener('click', () => openLevel(true));
 
         setupForm.addEventListener('submit', (event) => {
           event.preventDefault();
           if (state.players.length < MIN || state.editing !== -1) return;
-          showGame();
-          primary.focus();
-          announcer.textContent = `Starting with ${state.players.length} players. ${asQuestion(state.question)}`;
+          openLevel(false);
         });
         document.getElementById('wml-edit-players').addEventListener('click', () => {
           showSetup();
@@ -7799,6 +8199,8 @@
           leave() {
             if (tallyDialog.open) tallyDialog.close();
             if (qDialog.open) qDialog.close();
+            if (adultDialog.open) adultDialog.close();
+            if (levelDialog.open) levelDialog.close();
           },
         });
 
