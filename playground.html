@@ -1753,41 +1753,128 @@
         align-self: center;
       }
 
-      .wml-ready {
+      /* ── Round: question, pass the phone, private vote, results ──
+         The vote and result lists are sized by the script to the space
+         left on screen, and scroll inside it. */
+      .wml-game {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: var(--space-2);
-        margin: 0;
-        padding: 0;
-        list-style: none;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4);
+        width: 100%;
       }
 
-      .wml-ready li {
-        padding: var(--space-1) var(--space-3);
+      .wml-panel {
+        align-items: center;
+        text-align: center;
+      }
+
+      .wml-big {
+        margin: 0;
+        font-size: clamp(1.75rem, 1.3rem + 2.5vw, 3rem);
+        font-weight: 800;
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+      }
+
+      .wml-panel .hs-who {
+        margin: 0;
+      }
+
+      /* Results: the question sits at the top of the results card. */
+      .wml-rq {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 750;
+        line-height: 1.3;
+      }
+
+      /* Ties and long names: a smaller headline. */
+      .wml-big[data-long] {
+        font-size: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+      }
+
+      .mode-options.wml-choices {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-2);
+        width: 100%;
+        max-height: min(22rem, 42dvh);
+        margin: 0;
+        padding: 2px 6px 6px 2px;
+        overflow-y: auto;
+        border: 0;
+      }
+
+      .wml-choices .count-option {
+        min-height: var(--tap-min);
+        padding: var(--space-2) 1.9rem var(--space-2) var(--space-2);
+        overflow-wrap: anywhere;
+      }
+
+      .wml-results {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        width: 100%;
+        max-height: min(20rem, 38dvh);
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        list-style: none;
+        text-align: left;
+      }
+
+      .wml-results li {
+        display: grid;
+        grid-template-columns: minmax(4.5rem, 9rem) 1fr 1.75rem;
+        flex-shrink: 0;
+        align-items: center;
+        gap: var(--space-2);
+        font-weight: 650;
+      }
+
+      .wml-result-name {
+        overflow-wrap: break-word;
+        min-width: 0;
+      }
+
+      .wml-bar {
+        height: 1rem;
         border: 2px solid var(--color-text);
         border-radius: 999px;
         background: var(--color-bg);
-        font-weight: 700;
+        overflow: hidden;
       }
 
-      .wml-ready-note {
-        text-align: center;
+      .wml-bar span {
+        display: block;
+        height: 100%;
+        background: var(--color-accent);
       }
 
-      .wml-ready-title {
-        margin: 0;
-        color: var(--color-text-muted);
-        font-size: 0.8125rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-align: center;
-        text-transform: uppercase;
+      .wml-results li[data-top] .wml-result-name,
+      .wml-results li[data-top] .wml-result-votes {
+        color: var(--color-accent-strong);
+        font-weight: 800;
+      }
+
+      .wml-result-votes {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .wml-bar span {
+          transition: width 500ms var(--ease);
+        }
       }
 
       @media (forced-colors: active) {
         .wml-card {
           box-shadow: none;
+        }
+        .wml-bar span {
+          background: Highlight;
         }
       }
 
@@ -1801,6 +1888,36 @@
         }
         .wml-list {
           max-height: 9.5rem;
+        }
+        #wml-game {
+          gap: var(--space-3);
+        }
+        #wml-game .hs-question {
+          gap: var(--space-2);
+          padding: var(--space-4);
+        }
+        #wml-game .hs-question-text {
+          font-size: 1.1875rem;
+        }
+        .wml-big {
+          font-size: 1.625rem;
+        }
+        #wml-game[data-phase='results'] .hs-links {
+          display: none;
+        }
+        #wml-game .roll-button {
+          min-height: var(--tap-min);
+          font-size: 1.0625rem;
+        }
+        #wml-game .deal-actions {
+          gap: var(--space-3);
+        }
+        #wml-game .hs-more {
+          padding: 0 var(--space-2);
+          font-size: 0.875rem;
+        }
+        #wml-game .hs-links {
+          column-gap: var(--space-2);
         }
       }
 
@@ -1854,6 +1971,89 @@
         #most-likely .roll-button {
           min-height: var(--tap-min);
           font-size: 1.0625rem;
+        }
+        /* Round: question/vote card on the left, the rest on the right. */
+        #wml-game {
+          display: grid;
+          grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+          grid-template-areas:
+            'q panel'
+            'q actions'
+            'q links';
+          align-items: center;
+          column-gap: var(--space-5);
+          row-gap: var(--space-2);
+          width: min(100%, 52rem);
+        }
+        #wml-game[data-phase='handoff'],
+        #wml-game[data-phase='ready'] {
+          grid-template-areas:
+            'panel panel'
+            'actions actions';
+          grid-template-columns: 1fr;
+        }
+        #wml-game[data-phase='vote'] {
+          grid-template-areas:
+            'q panel'
+            'actions panel'
+            'links panel';
+        }
+        #wml-game[data-phase='results'] {
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+          grid-template-areas:
+            'panel actions'
+            'panel links';
+        }
+        #wml-game .hs-question {
+          grid-area: q;
+          gap: var(--space-2);
+          padding: var(--space-3) var(--space-4);
+        }
+        #wml-game .hs-question-text {
+          font-size: 1.0625rem;
+        }
+        #wml-game .wml-panel {
+          grid-area: panel;
+          gap: var(--space-1);
+          padding: var(--space-2) var(--space-3);
+        }
+        #wml-game .deal-actions {
+          grid-area: actions;
+          gap: var(--space-2);
+        }
+        #wml-game .hs-links {
+          grid-area: links;
+          column-gap: var(--space-1);
+        }
+        #wml-game .hs-more {
+          padding: 0 var(--space-2);
+          font-size: 0.8125rem;
+        }
+        .wml-big {
+          font-size: 1.75rem;
+        }
+        .wml-big[data-long] {
+          font-size: 1.25rem;
+        }
+        .wml-rq {
+          font-size: 0.9375rem;
+        }
+        /* During a round the cards say what's going on; keep the heading for screen readers. */
+        #most-likely:has(#wml-game:not([hidden])) > h1 {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+        .mode-options.wml-choices {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #wml-choices .count-option {
+          min-height: var(--tap-min);
+          padding-inline: var(--space-2);
+          font-size: 0.9375rem;
         }
       }
 
@@ -3607,15 +3807,37 @@
             </button>
           </form>
 
-          <div class="wml-card" id="wml-ready" hidden>
-            <p class="wml-ready-title" id="wml-ready-title">Players</p>
-            <ul class="wml-ready" id="wml-ready-list" aria-labelledby="wml-ready-title"></ul>
-            <p class="hs-who wml-ready-note" id="wml-ready-note">
-              Everyone's in! The questions and voting come next.
-            </p>
-          </div>
-          <div class="deal-actions" id="wml-ready-actions" hidden>
-            <button type="button" class="text-button" id="wml-edit-players">Edit players</button>
+          <!-- Round: question → pass the phone → private votes → results -->
+          <div class="wml-game" id="wml-game" hidden>
+            <figure class="hs-question" id="wml-qcard">
+              <figcaption class="hs-question-label" id="wml-qlabel">Round 1</figcaption>
+              <p class="hs-question-text" id="wml-qtext"></p>
+              <p class="hs-who" id="wml-qnote"></p>
+            </figure>
+            <div class="wml-card wml-panel" id="wml-panel" hidden>
+              <p class="wml-rq" id="wml-rq" hidden></p>
+              <p class="dc-kicker" id="wml-kicker"></p>
+              <p class="wml-big" id="wml-big"></p>
+              <p class="visually-hidden" id="wml-choices-legend">Your vote</p>
+              <div
+                class="count-options mode-options wml-choices"
+                id="wml-choices"
+                role="radiogroup"
+                aria-labelledby="wml-choices-legend"
+                hidden
+              ></div>
+              <ol class="wml-results" id="wml-results" aria-label="Votes this round" hidden></ol>
+              <p class="hs-who" id="wml-caption"></p>
+            </div>
+            <div class="deal-actions" id="wml-actions">
+              <button type="button" class="text-button" id="wml-secondary"></button>
+              <button type="button" class="action-button roll-button" id="wml-primary"></button>
+            </div>
+            <div class="hs-links" id="wml-links">
+              <button type="button" class="hs-more" id="wml-tally-open">Vote tally</button>
+              <button type="button" class="hs-more" id="wml-edit-players">Edit players</button>
+              <button type="button" class="hs-more" id="wml-q-open">Add questions</button>
+            </div>
           </div>
           <p class="visually-hidden" id="wml-announcer" role="status" aria-live="polite"></p>
         </section>
@@ -3901,6 +4123,80 @@
           >
             Continue
           </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Who's Most Likely To?: running vote tally -->
+    <dialog class="mode-picker" id="wml-tally" aria-labelledby="wml-tally-title">
+      <form method="dialog">
+        <div class="picker-header">
+          <h2 id="wml-tally-title">Vote tally</h2>
+          <button type="button" class="icon-button" id="wml-tally-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="wheel-setup-intro" id="wml-tally-sub">Votes received so far.</p>
+        <ol class="dc-scores" id="wml-tally-list" aria-label="Vote tally"></ol>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="wml-tally-reset">Reset tally</button>
+          <button type="submit" class="action-button" id="wml-tally-done">Done</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Who's Most Likely To?: the players' own questions -->
+    <dialog
+      class="mode-picker"
+      id="wml-questions"
+      aria-labelledby="wml-questions-title"
+      aria-describedby="wml-questions-intro"
+    >
+      <form method="dialog" id="wml-questions-form" novalidate>
+        <div class="picker-header">
+          <h2 id="wml-questions-title">Add your own questions</h2>
+          <button type="button" class="icon-button" id="wml-questions-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="wheel-setup-intro" id="wml-questions-intro">
+          Finish the sentence "Who's most likely to…", e.g. "forget their keys".
+        </p>
+        <div class="wheel-add">
+          <label for="wml-q-input" class="visually-hidden">New question</label>
+          <input
+            type="text"
+            id="wml-q-input"
+            maxlength="120"
+            autocomplete="off"
+            enterkeyhint="enter"
+            placeholder="…forget their keys"
+          />
+          <button type="button" class="text-button" id="wml-q-add">Add</button>
+        </div>
+        <p class="wheel-count" id="wml-q-count" aria-live="polite">0 of your questions</p>
+        <ol class="wheel-list" id="wml-q-list" aria-label="Your questions"></ol>
+        <label class="hs-only" id="wml-only-row" hidden>
+          <input type="checkbox" id="wml-only" />
+          Only ask our questions
+        </label>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="wml-q-cancel">Cancel</button>
+          <button type="submit" class="action-button" id="wml-q-save">Save</button>
         </div>
       </form>
     </dialog>
@@ -6728,8 +7024,10 @@
       /* ════════════════════════════════════════════════════════════════
          GAME: WHO'S MOST LIKELY TO?
          Screen 1 – player setup: 2–12 players, no duplicate names (any
-         letter case), add / edit in place / remove. Kept in memory for
-         this tab only. Questions and voting are the next screens.
+         letter case), add / edit in place / remove.
+         Rounds – a question, then one phone passed from player to player
+         for private votes, then results. Only vote counts are kept (never
+         who voted for whom). Everything lives in memory for this tab.
          ════════════════════════════════════════════════════════════════ */
       (() => {
         const option = document.querySelector('[data-game="most-likely"]');
@@ -6743,13 +7041,28 @@
         const count = document.getElementById('wml-count');
         const hint = document.getElementById('wml-hint');
         const startButton = document.getElementById('wml-start');
-        const readyCard = document.getElementById('wml-ready');
-        const readyList = document.getElementById('wml-ready-list');
-        const readyActions = document.getElementById('wml-ready-actions');
+        const game = document.getElementById('wml-game');
         const announcer = document.getElementById('wml-announcer');
         const MIN = 2;
         const MAX = 12;
-        const state = { players: [], editing: -1, started: false };
+        const state = {
+          players: [],
+          editing: -1,
+          started: false,
+          // Round
+          phase: 'question', // question → handoff → vote → (next voter…) → ready → results
+          round: 0,
+          question: null,
+          lastQuestion: null,
+          bag: [], // questions still to ask, in random order
+          own: [],
+          onlyOwn: false,
+          voter: 0, // index into players of who votes next
+          votes: new Map(), // this round: candidate → votes (who voted for whom is never kept)
+          voted: 0,
+          tally: new Map(), // all rounds: player → votes received
+          rounds: 0,
+        };
 
         const ICONS = {
           edit:
@@ -6936,35 +7249,533 @@
         });
         addButton.addEventListener('click', addPlayer);
 
-        /* ── Start → players ready (questions come next) ─────────────── */
+        /* ── Round gameplay: one phone, passed from player to player ──── */
+        const QUESTIONS = [
+          'become famous',
+          'forget their own birthday',
+          'survive a zombie apocalypse',
+          'become a millionaire',
+          'cry during a movie',
+          'get lost in their own city',
+          'fall asleep at a party',
+          'win a reality show',
+          'laugh at the wrong moment',
+          'become a stand-up comedian',
+          'eat the last slice without asking',
+          'text their ex at midnight',
+          'become a viral meme',
+          'start their own business',
+          'travel the world alone',
+          'adopt ten pets',
+          'forget where they parked',
+          'talk their way out of a fine',
+          'binge-watch a whole series in one day',
+          'become a politician',
+          'lose their phone twice in one day',
+          'be late to their own wedding',
+          'sing loudly in public',
+          'trip on a perfectly flat road',
+          'become a famous chef',
+          'keep a secret forever',
+          'spill a secret by accident',
+          'go viral for dancing',
+          'marry a celebrity',
+          'end up on TV by accident',
+          'move to another country',
+          'write a bestselling book',
+          "prank everyone on April Fools' Day",
+          'run a marathon',
+          'quit their job dramatically',
+          'get a tattoo on a dare',
+          "forget a friend's name",
+          'burn water while cooking',
+          'make friends with a stranger on a train',
+          'send a message to the wrong group',
+          'spend their whole salary in a day',
+          'still be gaming at 60',
+          'become a YouTuber',
+          'cry at a wedding',
+          'give the best advice',
+          'be the first to leave a party',
+          'be the last to leave a party',
+          'take 100 selfies a day',
+          'win a dance battle',
+          'become a detective',
+          'believe a fake news story',
+          'plan the perfect surprise party',
+          'get locked out of their own house',
+          'laugh at their own jokes',
+          'have a secret talent',
+          'become a superhero',
+          'argue with a customer-care chatbot',
+          'adopt a stray dog',
+          "remember everyone's birthday",
+          'fall for a prank every single time',
+        ];
+        const qCard = document.getElementById('wml-qcard');
+        const qLabel = document.getElementById('wml-qlabel');
+        const qText = document.getElementById('wml-qtext');
+        const qNote = document.getElementById('wml-qnote');
+        const panel = document.getElementById('wml-panel');
+        const kicker = document.getElementById('wml-kicker');
+        const big = document.getElementById('wml-big');
+        const choices = document.getElementById('wml-choices');
+        const results = document.getElementById('wml-results');
+        const caption = document.getElementById('wml-caption');
+        const primary = document.getElementById('wml-primary');
+        const secondary = document.getElementById('wml-secondary');
+        const links = document.getElementById('wml-links');
+        const tallyOpen = document.getElementById('wml-tally-open');
+
+        /* Fair random integer 1–max (crypto, no modulo bias). */
+        function randomUpTo(max) {
+          const buffer = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= limit);
+          return (buffer[0] % max) + 1;
+        }
+
+        /** "forget their keys" → "Who's most likely to forget their keys?" */
+        function asQuestion(text) {
+          const t = text.trim().replace(/[?.!]+$/, '');
+          return /^who/i.test(t) ? `${t}?` : `Who's most likely to ${t}?`;
+        }
+
+        function nextQuestion() {
+          if (!state.bag.length) {
+            const list =
+              state.onlyOwn && state.own.length ? [...state.own] : [...QUESTIONS, ...state.own];
+            for (let i = list.length - 1; i > 0; i--) {
+              const j = randomUpTo(i + 1) - 1;
+              [list[i], list[j]] = [list[j], list[i]];
+            }
+            const last = list.length - 1;
+            if (last > 0 && list[last] === state.lastQuestion)
+              [list[0], list[last]] = [list[last], list[0]];
+            state.bag = list;
+          }
+          state.lastQuestion = state.question;
+          return state.bag.pop();
+        }
+
+        function setPhase(phase) {
+          state.phase = phase;
+          game.dataset.phase = phase;
+        }
+
+        /* Shortens the visible list (votes or results) so the round fits on
+           screen; the list scrolls inside. Never below about two rows. */
+        function fitList() {
+          const list = !choices.hidden ? choices : !results.hidden ? results : null;
+          if (!list || view.hidden) return;
+          const MIN = window.innerHeight < 480 ? 72 : 96;
+          const bottomOf = () =>
+            Math.max(
+              ...[qCard, panel, document.getElementById('wml-actions'), links]
+                .filter((el) => !el.hidden && el.checkVisibility())
+                .map((el) => el.getBoundingClientRect().bottom),
+            );
+          list.style.maxHeight = 'none';
+          for (let pass = 0; pass < 2; pass++) {
+            const over = bottomOf() + 12 - window.innerHeight;
+            if (over <= 0) break;
+            list.style.maxHeight = `${Math.max(MIN, list.getBoundingClientRect().height - over)}px`;
+          }
+        }
+
+        window.addEventListener('resize', () => {
+          choices.style.maxHeight = '';
+          results.style.maxHeight = '';
+          fitList();
+        });
+
+        function setButtons(second, first, firstDisabled = false) {
+          secondary.hidden = !second;
+          secondary.textContent = second ?? '';
+          primary.textContent = first;
+          primary.disabled = firstDisabled;
+        }
+
+        function showQuestion() {
+          setPhase('question');
+          qCard.hidden = false;
+          qLabel.textContent = `Round ${state.round}`;
+          qText.textContent = asQuestion(state.question);
+          qNote.textContent = 'Read it out loud. Then everyone votes in private, one at a time.';
+          qNote.hidden = false;
+          panel.hidden = true;
+          links.hidden = false;
+          tallyOpen.hidden = false;
+          setButtons('New question', 'Start voting');
+        }
+
+        function beginRound() {
+          state.round++;
+          state.question = nextQuestion();
+          state.votes = new Map(state.players.map((p) => [p, 0]));
+          state.voted = 0;
+          state.voter = 0;
+          showQuestion();
+          announcer.textContent = `Round ${state.round}. ${asQuestion(state.question)}`;
+        }
+
+        function showHandoff() {
+          document.getElementById('wml-rq').hidden = true;
+          setPhase('handoff');
+          const name = state.players[state.voter];
+          qCard.hidden = true;
+          panel.hidden = false;
+          choices.hidden = true;
+          results.hidden = true;
+          kicker.hidden = false;
+          kicker.textContent = `Vote ${state.voter + 1} of ${state.players.length}`;
+          big.hidden = false;
+          big.textContent = name;
+          big.toggleAttribute('data-long', big.textContent.length > 14);
+          caption.textContent = `Pass the phone to ${name}. Everyone else, look away!`;
+          links.hidden = true;
+          setButtons(`Skip ${name}`, 'Vote now');
+          announcer.textContent = `Pass the phone to ${name}.`;
+        }
+
+        function showVote() {
+          document.getElementById('wml-rq').hidden = true;
+          setPhase('vote');
+          const name = state.players[state.voter];
+          qCard.hidden = false;
+          qLabel.textContent = `${name}'s vote`;
+          qText.textContent = asQuestion(state.question);
+          qNote.hidden = true;
+          panel.hidden = false;
+          kicker.hidden = true;
+          big.hidden = true;
+          results.hidden = true;
+          choices.hidden = false;
+          document.getElementById('wml-choices-legend').textContent =
+            `${name}, vote: ${asQuestion(state.question)}`;
+          choices.replaceChildren(
+            ...state.players.map((player) => {
+              const label = document.createElement('label');
+              label.className = 'count-option';
+              const input = document.createElement('input');
+              input.type = 'radio';
+              input.name = 'wml-vote';
+              input.value = player;
+              input.addEventListener('change', () => (primary.disabled = false));
+              label.append(
+                input,
+                Object.assign(document.createElement('span'), { textContent: player }),
+              );
+              return label;
+            }),
+          );
+          caption.textContent = 'Tap who fits best. Nobody will see your vote.';
+          setButtons('Back', 'Confirm vote', true);
+          fitList();
+          choices.querySelector('input')?.focus();
+        }
+
+        function afterVoter() {
+          state.voter++;
+          if (state.voter < state.players.length) showHandoff();
+          else showReady();
+        }
+
+        function confirmVote() {
+          const chosen = choices.querySelector('input:checked');
+          if (!chosen) return;
+          state.votes.set(chosen.value, state.votes.get(chosen.value) + 1);
+          state.voted++;
+          choices.replaceChildren(); // the choice leaves the page
+          announcer.textContent = 'Vote saved.';
+          afterVoter();
+          primary.focus();
+        }
+
+        function showReady() {
+          document.getElementById('wml-rq').hidden = true;
+          setPhase('ready');
+          qCard.hidden = true;
+          panel.hidden = false;
+          choices.hidden = true;
+          results.hidden = true;
+          kicker.hidden = false;
+          kicker.textContent = state.voted ? 'All votes are in' : 'No votes';
+          big.hidden = false;
+          big.textContent = state.voted ? 'Ready!' : 'Nobody voted';
+          big.toggleAttribute('data-long', big.textContent.length > 14);
+          caption.textContent = state.voted
+            ? `${state.voted} vote${state.voted === 1 ? '' : 's'}. Gather round for the results.`
+            : 'Everyone was skipped this round.';
+          links.hidden = true;
+          if (state.voted) setButtons(null, 'Reveal results');
+          else setButtons(null, 'Next question');
+          announcer.textContent = caption.textContent;
+        }
+
+        function showResults() {
+          setPhase('results');
+          state.rounds++;
+          state.votes.forEach((n, player) =>
+            state.tally.set(player, (state.tally.get(player) ?? 0) + n),
+          );
+          const rows = [...state.votes.entries()].sort(
+            (a, b) => b[1] - a[1] || state.players.indexOf(a[0]) - state.players.indexOf(b[0]),
+          );
+          const top = rows[0][1];
+          const winners = rows.filter(([, n]) => n === top).map(([p]) => p);
+          qCard.hidden = true;
+          const rq = document.getElementById('wml-rq');
+          rq.textContent = asQuestion(state.question);
+          rq.hidden = false;
+          panel.hidden = false;
+          choices.hidden = true;
+          kicker.hidden = false;
+          kicker.textContent =
+            winners.length > 2 ? 'Most likely' : winners.length > 1 ? "It's a tie" : 'Most likely';
+          big.hidden = false;
+          // Two-way ties name both; bigger ties are shown in the list below.
+          big.textContent = winners.length > 2 ? `${winners.length}-way tie` : winners.join(' & ');
+          big.toggleAttribute('data-long', big.textContent.length > 14);
+          caption.textContent = `${top} of ${state.voted} vote${state.voted === 1 ? '' : 's'}${winners.length > 1 ? ' each' : ''}`;
+          results.hidden = false;
+          results.replaceChildren(
+            ...rows.map(([player, n]) => {
+              const li = document.createElement('li');
+              if (n === top) li.dataset.top = '';
+              li.setAttribute('aria-label', `${player}: ${n} vote${n === 1 ? '' : 's'}`);
+              const bar = document.createElement('span');
+              bar.className = 'wml-bar';
+              bar.setAttribute('aria-hidden', 'true');
+              const fill = document.createElement('span');
+              fill.style.width = '0%';
+              bar.append(fill);
+              li.append(
+                Object.assign(document.createElement('span'), {
+                  className: 'wml-result-name',
+                  textContent: player,
+                }),
+                bar,
+                Object.assign(document.createElement('span'), {
+                  className: 'wml-result-votes',
+                  textContent: String(n),
+                }),
+              );
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() => (fill.style.width = `${(n / state.voted) * 100}%`)),
+              );
+              return li;
+            }),
+          );
+          links.hidden = false;
+          tallyOpen.hidden = true; // the Vote tally button is right there
+          setButtons('Vote tally', 'Next question');
+          fitList();
+          announcer.textContent = `${winners.length > 1 ? "It's a tie" : 'Most likely'}: ${winners.join(', ')}, ${caption.textContent}.`;
+          primary.focus();
+        }
+
+        primary.addEventListener('click', () => {
+          if (primary.disabled) return;
+          if (state.phase === 'question') showHandoff();
+          else if (state.phase === 'handoff') showVote();
+          else if (state.phase === 'vote') confirmVote();
+          else if (state.phase === 'ready' && state.voted) showResults();
+          else beginRound();
+        });
+        secondary.addEventListener('click', () => {
+          if (state.phase === 'question') {
+            state.question = nextQuestion(); // a different question, same round
+            showQuestion();
+            announcer.textContent = asQuestion(state.question);
+          } else if (state.phase === 'handoff')
+            afterVoter(); // skip this player
+          else if (state.phase === 'vote')
+            showHandoff(); // back: nothing was saved
+          else if (state.phase === 'results') openTally();
+        });
+
+        /* ── Vote tally ─────────────────────────────────────────────── */
+        const tallyDialog = document.getElementById('wml-tally');
+        const tallyList = document.getElementById('wml-tally-list');
+        let tallyReturn = null;
+
+        function renderTally() {
+          const rows = [...state.players]
+            .map((p) => ({ p, n: state.tally.get(p) ?? 0 }))
+            .sort((a, b) => b.n - a.n || state.players.indexOf(a.p) - state.players.indexOf(b.p));
+          const top = rows[0]?.n ?? 0;
+          document.getElementById('wml-tally-sub').textContent = state.rounds
+            ? `Votes received over ${state.rounds} round${state.rounds === 1 ? '' : 's'}.`
+            : 'No rounds played yet.';
+          tallyList.replaceChildren(
+            ...rows.map((row, i) => {
+              const li = document.createElement('li');
+              if (top > 0 && row.n === top) li.dataset.top = '';
+              li.setAttribute('aria-label', `${row.p}: ${row.n} vote${row.n === 1 ? '' : 's'}`);
+              li.append(
+                Object.assign(document.createElement('span'), {
+                  className: 'dc-rank',
+                  textContent: String(i + 1),
+                }),
+                Object.assign(document.createElement('span'), {
+                  className: 'dc-score-name',
+                  textContent: row.p,
+                }),
+                Object.assign(document.createElement('span'), {
+                  className: 'dc-score-points',
+                  textContent: String(row.n),
+                }),
+              );
+              return li;
+            }),
+          );
+        }
+
+        function openTally() {
+          tallyReturn = document.activeElement;
+          renderTally();
+          tallyDialog.showModal();
+          document.getElementById('wml-tally-done').focus();
+        }
+
+        tallyOpen.addEventListener('click', openTally);
+        tallyDialog.addEventListener('close', () => tallyReturn?.focus());
+        document
+          .getElementById('wml-tally-close')
+          .addEventListener('click', () => tallyDialog.close());
+        tallyDialog.addEventListener('click', (event) => {
+          if (event.target === tallyDialog) tallyDialog.close();
+        });
+        document.getElementById('wml-tally-reset').addEventListener('click', () => {
+          state.tally.clear();
+          state.rounds = 0;
+          renderTally();
+          announcer.textContent = 'Tally reset.';
+        });
+
+        /* ── Your own questions ─────────────────────────────────────── */
+        const qDialog = document.getElementById('wml-questions');
+        const qForm = document.getElementById('wml-questions-form');
+        const qInput = document.getElementById('wml-q-input');
+        const qList = document.getElementById('wml-q-list');
+        const qCount = document.getElementById('wml-q-count');
+        const onlyRow = document.getElementById('wml-only-row');
+        const onlyBox = document.getElementById('wml-only');
+        const qOpen = document.getElementById('wml-q-open');
+        let qDraft = [];
+
+        function renderOwn(focusIndex) {
+          qList.replaceChildren(
+            ...qDraft.map((text, i) => {
+              const li = document.createElement('li');
+              li.append(
+                Object.assign(document.createElement('span'), {
+                  className: 'wheel-item-text',
+                  textContent: text,
+                }),
+                iconButton('remove', 'Remove ' + text, () => {
+                  qDraft.splice(i, 1);
+                  renderOwn(i);
+                }),
+              );
+              return li;
+            }),
+          );
+          const n = qDraft.length;
+          qCount.textContent = `${n} of your question${n === 1 ? '' : 's'}`;
+          qInput.disabled = n >= 100;
+          onlyRow.hidden = n === 0;
+          if (n === 0) onlyBox.checked = false;
+          if (focusIndex !== undefined) {
+            const buttons = qList.querySelectorAll('button');
+            (buttons[Math.min(focusIndex, buttons.length - 1)] || qInput).focus();
+          }
+        }
+
+        function addOwn() {
+          const text = clean(qInput.value).replace(/^who'?s most likely to\s*/i, '');
+          if (!text || qDraft.length >= 100) return qInput.focus();
+          qDraft.push(text);
+          qInput.value = '';
+          renderOwn();
+          qList.lastElementChild?.scrollIntoView({ block: 'nearest' });
+          qInput.focus();
+        }
+
+        function closeOwn() {
+          qDialog.close();
+          qOpen.focus();
+        }
+
+        qOpen.addEventListener('click', () => {
+          qDraft = [...state.own];
+          onlyBox.checked = state.onlyOwn;
+          qInput.value = '';
+          renderOwn();
+          qDialog.showModal();
+          qInput.focus();
+        });
+        document.getElementById('wml-q-add').addEventListener('click', addOwn);
+        qInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            addOwn();
+          }
+        });
+        document.getElementById('wml-questions-close').addEventListener('click', closeOwn);
+        document.getElementById('wml-q-cancel').addEventListener('click', closeOwn);
+        qDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeOwn();
+        });
+        qDialog.addEventListener('click', (event) => {
+          if (event.target === qDialog) closeOwn();
+        });
+        qForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          state.own = [...qDraft];
+          state.onlyOwn = onlyBox.checked && qDraft.length > 0;
+          state.bag = [];
+          qDialog.close();
+          qOpen.textContent = state.own.length
+            ? `Your questions (${state.own.length})`
+            : 'Add questions';
+          qOpen.focus();
+          announcer.textContent = state.own.length
+            ? `${state.own.length} of your questions saved.`
+            : 'Using the built-in questions.';
+        });
+
+        /* ── Setup ↔ game ───────────────────────────────────────────── */
         function showSetup() {
           state.started = false;
           intro.hidden = false;
           setupForm.hidden = false;
-          readyCard.hidden = true;
-          readyActions.hidden = true;
+          game.hidden = true;
           render();
         }
 
-        function showReady() {
+        function showGame() {
           state.started = true;
           intro.hidden = true;
           setupForm.hidden = true;
-          readyCard.hidden = false;
-          readyActions.hidden = false;
-          readyList.replaceChildren(
-            ...state.players.map((name) =>
-              Object.assign(document.createElement('li'), { textContent: name }),
-            ),
-          );
+          game.hidden = false;
+          // A round in progress is dropped (players may have changed); it keeps its number.
+          if (state.round && state.phase !== 'results') state.round--;
+          [...state.tally.keys()].forEach((p) => {
+            if (!state.players.includes(p)) state.tally.delete(p);
+          });
+          beginRound();
         }
 
         setupForm.addEventListener('submit', (event) => {
           event.preventDefault();
           if (state.players.length < MIN || state.editing !== -1) return;
-          showReady();
-          document.getElementById('wml-edit-players').focus();
-          announcer.textContent = `Starting with ${state.players.length} players.`;
+          showGame();
+          primary.focus();
+          announcer.textContent = `Starting with ${state.players.length} players. ${asQuestion(state.question)}`;
         });
         document.getElementById('wml-edit-players').addEventListener('click', () => {
           showSetup();
@@ -6977,12 +7788,17 @@
           title: "Who's Most Likely To?",
           enter(_param, fromNavigation) {
             state.editing = -1;
-            if (state.started) showReady();
+            if (state.started)
+              showGame(); // a fresh round; players and tally are kept
             else showSetup();
             if (fromNavigation) {
               if (state.started) title.focus();
               else nameInput.focus();
             }
+          },
+          leave() {
+            if (tallyDialog.open) tallyDialog.close();
+            if (qDialog.open) qDialog.close();
           },
         });
 
