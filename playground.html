@@ -1673,7 +1673,8 @@
 
       .mode-options .count-option,
       .mode-picker .text-button,
-      .wheel-actions .text-button {
+      .wheel-actions .text-button,
+      .deal-actions .text-button {
         --btn-face: var(--color-surface);
         --btn-ink: var(--color-text);
         --btn-bevel: color-mix(in srgb, var(--btn-face) 78%, var(--btn-ink));
@@ -1694,7 +1695,8 @@
       @media (hover: hover) {
         .mode-options .count-option:hover,
         .mode-picker .text-button:hover,
-        .wheel-actions .text-button:hover {
+        .wheel-actions .text-button:hover,
+        .deal-actions .text-button:hover {
           border-color: var(--btn-ink);
           background-color: var(--btn-face);
           box-shadow:
@@ -1706,7 +1708,8 @@
 
       .mode-options .count-option:active,
       .mode-picker .text-button:active,
-      .wheel-actions .text-button:active {
+      .wheel-actions .text-button:active,
+      .deal-actions .text-button:active {
         transform: none;
         box-shadow: none;
         translate: 4px 4px;
@@ -1780,7 +1783,8 @@
         .mode-picker,
         .mode-options .count-option,
         .mode-picker .text-button,
-        .wheel-actions .text-button {
+        .wheel-actions .text-button,
+        .deal-actions .text-button {
           box-shadow: none;
         }
       }
@@ -1842,6 +1846,159 @@
 
       .rp-stage p {
         margin: 0;
+      }
+
+      /* ── Card › Classic Deck: the sealed pack ──────────────────────── */
+      .deck-pack {
+        width: min(60%, 13rem, calc(100dvh - 24rem));
+        min-width: 7.5rem;
+        filter: drop-shadow(6px 6px 0 var(--color-text));
+      }
+
+      .deck-pack svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+
+      .pack-body {
+        fill: var(--color-accent);
+      }
+      .pack-lid {
+        fill: color-mix(in srgb, var(--color-accent) 78%, var(--color-text));
+      }
+      .pack-seal,
+      .pack-face {
+        fill: var(--color-surface);
+      }
+      .pack-line {
+        stroke: var(--color-text);
+      }
+      .pack-ink {
+        fill: var(--color-text);
+      }
+      .pack-label {
+        fill: var(--color-on-accent);
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .deck-pack:not([hidden]) {
+          animation: pack-in 420ms var(--ease) both;
+        }
+      }
+
+      @keyframes pack-in {
+        from {
+          opacity: 0;
+          transform: translateY(-16px) scale(0.94);
+        }
+      }
+
+      .deal-status {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 1.0625rem;
+        font-weight: 650;
+      }
+
+      .deal-status strong {
+        color: var(--color-text);
+      }
+
+      .deal-actions {
+        display: flex;
+        justify-content: center;
+        padding: 0 4px 4px 0; /* room for the hard shadow */
+      }
+
+      /* Set up the deal popup */
+      .deal-label {
+        margin: 0;
+        font-weight: 650;
+      }
+
+      .stepper {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: 0 4px 4px 0;
+      }
+
+      .stepper .text-button {
+        flex: none;
+        width: 3rem;
+        min-width: 0;
+        padding: 0;
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      .stepper input {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-3);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+        font-size: 1.25rem;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .stepper input:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      .stepper input[aria-invalid='true'] {
+        border-style: dashed;
+      }
+
+      .deal-direction {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .deck-pack {
+          width: min(40%, calc(100dvh - 15rem));
+          min-width: 5.5rem;
+        }
+        #deal-setup form {
+          gap: var(--space-2);
+          padding-block: var(--space-3);
+        }
+        #deal-setup .count-option {
+          min-height: var(--tap-min);
+        }
+        #deal-setup .mode-icon {
+          display: none;
+        }
+        #deal-setup .range-field {
+          flex-direction: row;
+          align-items: center;
+          gap: var(--space-4);
+        }
+        #deal-setup .range-field label {
+          position: static;
+          width: auto;
+          height: auto;
+          overflow: visible;
+          clip-path: none;
+        }
+        #deal-setup .stepper {
+          flex: 1;
+          min-width: 0;
+        }
       }
 
       /* ── Spinning Wheel: the wheel ─────────────────────────────────── */
@@ -2042,7 +2199,8 @@
 
       @media (forced-colors: active) {
         .wheel,
-        .wheel-actions .text-button {
+        .wheel-actions .text-button,
+        .deal-actions .text-button {
           box-shadow: none;
         }
         .wheel-pointer {
@@ -2351,6 +2509,58 @@
               <span class="rp-range" id="rp-range"></span>
             </div>
           </div>
+          <!-- Card › Classic Deck: a sealed pack -->
+          <div class="deck-pack" id="deck-pack" hidden>
+            <svg viewBox="0 0 180 240" role="img" aria-label="A sealed pack of 52 playing cards">
+              <rect
+                class="pack-body pack-line"
+                x="6"
+                y="30"
+                width="168"
+                height="204"
+                rx="12"
+                stroke-width="5"
+              />
+              <rect
+                class="pack-lid pack-line"
+                x="6"
+                y="6"
+                width="168"
+                height="46"
+                rx="10"
+                stroke-width="5"
+              />
+              <rect
+                class="pack-seal pack-line"
+                x="78"
+                y="0"
+                width="24"
+                height="64"
+                rx="3"
+                stroke-width="4"
+              />
+              <rect
+                class="pack-face pack-line"
+                x="40"
+                y="80"
+                width="100"
+                height="112"
+                rx="50"
+                stroke-width="4"
+              />
+              <path
+                class="pack-ink"
+                transform="translate(38.8 86) scale(3.2)"
+                d="M16 9c-2.6 3-6 4.6-6 7.4a3 3 0 0 0 5 2.2l-.9 3.4h3.8l-.9-3.4a3 3 0 0 0 5-2.2C22 13.6 18.6 12 16 9z"
+              />
+              <text class="pack-label" x="90" y="218" text-anchor="middle">52 CARDS</text>
+            </svg>
+          </div>
+          <p class="deal-status" id="deal-status" hidden></p>
+          <div class="deal-actions" id="deal-actions" hidden>
+            <button type="button" class="text-button" id="deal-setup-open">Set up players</button>
+          </div>
+
           <!-- Spinning Wheel -->
           <div class="wheel" id="wheel" hidden>
             <div class="wheel-dial" id="wheel-dial">
@@ -2576,6 +2786,90 @@
             aria-describedby="range-picker-hint"
           >
             PRESS
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Card › Classic Deck: players and deal direction -->
+    <dialog class="mode-picker" id="deal-setup" aria-labelledby="deal-setup-title">
+      <form method="dialog" id="deal-setup-form" novalidate>
+        <div class="picker-header">
+          <h2 id="deal-setup-title">Set up the deal</h2>
+          <button type="button" class="icon-button" id="deal-setup-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="range-field">
+          <label class="deal-label" for="deal-players">How many players?</label>
+          <div class="stepper">
+            <button type="button" class="text-button" id="deal-minus" aria-label="Fewer players">
+              −
+            </button>
+            <input
+              type="text"
+              id="deal-players"
+              inputmode="numeric"
+              autocomplete="off"
+              enterkeyhint="done"
+              maxlength="2"
+              placeholder="2–12"
+              aria-describedby="deal-hint"
+            />
+            <button type="button" class="text-button" id="deal-plus" aria-label="More players">
+              +
+            </button>
+          </div>
+        </div>
+
+        <fieldset class="deal-direction">
+          <legend class="deal-label">Deal direction</legend>
+          <div class="count-options mode-options range-options">
+            <label class="count-option">
+              <input type="radio" name="deal-direction" value="clockwise" />
+              <span class="mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M25 16a9 9 0 1 1-3-6.7" stroke-linecap="round" />
+                  <path d="M23.5 4.5v5.5H18" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span>Clockwise</span>
+            </label>
+            <label class="count-option">
+              <input type="radio" name="deal-direction" value="anticlockwise" />
+              <span class="mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M7 16a9 9 0 1 0 3-6.7" stroke-linecap="round" />
+                  <path d="M8.5 4.5v5.5H14" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span>Anticlockwise</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <p class="picker-hint" id="deal-hint">
+          Enter the number of players and choose a direction.
+        </p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="deal-setup-cancel">Cancel</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="deal-setup-submit"
+            disabled
+            aria-describedby="deal-hint"
+          >
+            Distribute
           </button>
         </div>
       </form>
@@ -3988,7 +4282,125 @@
           if (!chosen) return;
           lastDeck = chosen.value;
           deckPicker.close();
+          setupOnArrival = chosen.value === 'classic'; // the classic deck asks for players
           navigate('random-picker', 'card/' + chosen.value);
+        });
+
+        /* ── Card › Classic Deck: sealed pack + "Set up the deal" ────────
+           Kept in memory for this tab only. Dealing comes in a later step. */
+        const PLAYERS_MIN = 2;
+        const PLAYERS_MAX = 12;
+        const deckPack = document.getElementById('deck-pack');
+        const dealStatus = document.getElementById('deal-status');
+        const dealActions = document.getElementById('deal-actions');
+        const dealOpenButton = document.getElementById('deal-setup-open');
+        const dealSetup = document.getElementById('deal-setup');
+        const dealForm = document.getElementById('deal-setup-form');
+        const playersInput = document.getElementById('deal-players');
+        const directionRadios = [...dealForm.elements['deal-direction']];
+        const dealSubmit = document.getElementById('deal-setup-submit');
+        const dealHint = document.getElementById('deal-hint');
+        const DIRECTION_NAMES = { clockwise: 'clockwise', anticlockwise: 'anticlockwise' };
+        const deal = { players: null, direction: null, timer: 0 };
+        let setupOnArrival = false; // set when the deck popup opens the classic deck
+
+        function parsePlayers(text) {
+          const clean = text.trim();
+          if (!/^\d{1,2}$/.test(clean)) return null;
+          const n = Number(clean);
+          return n >= PLAYERS_MIN && n <= PLAYERS_MAX ? n : null;
+        }
+
+        function syncDeal() {
+          const players = parsePlayers(playersInput.value);
+          const direction = directionRadios.find((r) => r.checked)?.value;
+          const typedBad = playersInput.value.trim() !== '' && players === null;
+          playersInput.setAttribute('aria-invalid', String(typedBad));
+          dealSubmit.disabled = players === null || !direction;
+          dealHint.hidden = !dealSubmit.disabled;
+          if (typedBad || (players === null && direction)) {
+            dealHint.textContent = `Enter ${PLAYERS_MIN} to ${PLAYERS_MAX} players.`;
+          } else if (players !== null) {
+            dealHint.textContent = 'Choose a direction.';
+          } else {
+            dealHint.textContent = 'Enter the number of players and choose a direction.';
+          }
+        }
+
+        function stepPlayers(by) {
+          const current = parsePlayers(playersInput.value);
+          const next = current === null ? PLAYERS_MIN : current + by;
+          playersInput.value = String(Math.min(PLAYERS_MAX, Math.max(PLAYERS_MIN, next)));
+          syncDeal();
+        }
+
+        function openDealSetup() {
+          clearTimeout(deal.timer);
+          playersInput.value = deal.players ? String(deal.players) : '';
+          directionRadios.forEach((r) => (r.checked = r.value === deal.direction));
+          syncDeal();
+          dealSetup.showModal();
+          playersInput.focus();
+        }
+
+        function closeDealSetup() {
+          dealSetup.close();
+          dealOpenButton.focus();
+        }
+
+        function showDealStatus() {
+          if (deal.players) {
+            dealStatus.innerHTML = '';
+            dealStatus.append(
+              'Ready to deal to ',
+              Object.assign(document.createElement('strong'), {
+                textContent: `${deal.players} players`,
+              }),
+              ', ' + DIRECTION_NAMES[deal.direction] + '.',
+            );
+            dealOpenButton.textContent = 'Change setup';
+          } else {
+            dealStatus.textContent = 'Set up the players to start.';
+            dealOpenButton.textContent = 'Set up players';
+          }
+        }
+
+        function showClassicScreen() {
+          stage.hidden = true;
+          deckPack.hidden = false;
+          dealStatus.hidden = false;
+          dealActions.hidden = false;
+          showDealStatus();
+        }
+
+        dealOpenButton.addEventListener('click', openDealSetup);
+        playersInput.addEventListener('input', syncDeal);
+        directionRadios.forEach((r) => r.addEventListener('change', syncDeal));
+        document.getElementById('deal-minus').addEventListener('click', () => stepPlayers(-1));
+        document.getElementById('deal-plus').addEventListener('click', () => stepPlayers(1));
+        document.getElementById('deal-setup-close').addEventListener('click', closeDealSetup);
+        document.getElementById('deal-setup-cancel').addEventListener('click', closeDealSetup);
+        dealSetup.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeDealSetup();
+        });
+        dealSetup.addEventListener('click', (event) => {
+          if (event.target === dealSetup) closeDealSetup(); // backdrop
+        });
+        dealForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const players = parsePlayers(playersInput.value);
+          const direction = directionRadios.find((r) => r.checked)?.value;
+          if (players === null || !direction) {
+            (players === null ? playersInput : directionRadios[0]).focus();
+            return;
+          }
+          deal.players = players;
+          deal.direction = direction;
+          dealSetup.close();
+          showDealStatus();
+          announcer.textContent = `Ready to deal to ${players} players, ${DIRECTION_NAMES[direction]}.`;
+          dealOpenButton.focus();
         });
 
         /** Splits a route param such as number/50 or card/classic. */
@@ -4031,6 +4443,9 @@
             wheelEl.hidden = true;
             wheelResult.hidden = true;
             wheelActions.hidden = true;
+            deckPack.hidden = true;
+            dealStatus.hidden = true;
+            dealActions.hidden = true;
             if (playable) {
               if (route.mode === 'number') resetNumberGame(route.max);
               else resetNumberGame(26, 'alphabet');
@@ -4041,6 +4456,14 @@
                 ? DECKS[route.deck].placeholder
                 : mode.placeholder;
               if (route.deck) lastDeck = route.deck;
+              if (route.deck === 'classic') {
+                showClassicScreen();
+                if (setupOnArrival) {
+                  // Let the sealed pack land, then ask for the players.
+                  const wait = reducedMotion.matches ? 0 : 650;
+                  deal.timer = setTimeout(openDealSetup, wait);
+                }
+              }
               if (isWheel) {
                 showWheelScreen();
                 if (spinOnArrival) spinWheel(); // PRESS in the options popup starts the game
@@ -4048,6 +4471,7 @@
             }
             rollOnArrival = false;
             spinOnArrival = false;
+            setupOnArrival = false;
             lastChoice = route.mode;
             if (route.max) lastMax = route.max;
             if (fromNavigation) title.focus();
@@ -4057,6 +4481,8 @@
             game.rolling = false;
             wheel.token++; // and a wheel that is still spinning
             setWheelBusy(false);
+            clearTimeout(deal.timer); // and a deal popup that hasn't opened yet
+            if (dealSetup.open) dealSetup.close();
           },
         });
       })();
