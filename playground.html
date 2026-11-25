@@ -3740,6 +3740,14 @@
               <input type="checkbox" name="dc-category" value="nature" />
               <span>Animals &amp; Nature</span>
             </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="adult" />
+              <span>18+</span>
+            </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="custom" />
+              <span id="dc-custom-label">Add your own</span>
+            </label>
           </div>
         </fieldset>
         <fieldset class="dc-group">
@@ -3847,6 +3855,27 @@
       </form>
     </dialog>
 
+    <!-- Dumb Charades: 18+ check -->
+    <dialog
+      class="mode-picker"
+      id="dc-adult"
+      aria-labelledby="dc-adult-title"
+      aria-describedby="dc-adult-text"
+    >
+      <form method="dialog" id="dc-adult-form">
+        <div class="picker-header">
+          <h2 id="dc-adult-title">18+ words</h2>
+        </div>
+        <p class="wheel-setup-intro" id="dc-adult-text">
+          These words are for adults only. Turn them on only if everyone playing is 18 or older.
+        </p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dc-adult-cancel">Cancel</button>
+          <button type="submit" class="action-button" id="dc-adult-yes">Everyone is 18+</button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- Dumb Charades: the players' own words -->
     <dialog
       class="mode-picker"
@@ -3869,7 +3898,7 @@
           </button>
         </div>
         <p class="wheel-setup-intro" id="dc-words-intro">
-          Words, movies or phrases. They're mixed in with the built-in ones.
+          Words, movies or phrases for the "Add your own" category.
         </p>
         <div class="wheel-add">
           <label for="dc-word" class="visually-hidden">New word</label>
@@ -3885,10 +3914,6 @@
         </div>
         <p class="wheel-count" id="dc-words-count" aria-live="polite">0 of your words</p>
         <ol class="wheel-list" id="dc-words-list" aria-label="Your words"></ol>
-        <label class="hs-only" id="dc-only-row" hidden>
-          <input type="checkbox" id="dc-only" />
-          Only use our words
-        </label>
         <div class="picker-actions">
           <button type="button" class="text-button" id="dc-words-cancel">Cancel</button>
           <button type="submit" class="action-button" id="dc-words-save">Save</button>
@@ -6688,13 +6713,60 @@
               'Waterfall',
             ],
           },
+          // Adults only: off by default, turned on after an 18+ check.
+          adult: {
+            easy: [
+              'Hangover',
+              'Bachelor party',
+              'Speed dating',
+              'Blind date',
+              'Tequila shots',
+              'Pub crawl',
+              'Walk of shame',
+              'Skinny dipping',
+              'First kiss',
+              'Breakup text',
+              'Drunk texting',
+              'Lap dance',
+            ],
+            medium: [
+              'Friends with benefits',
+              'Love bite',
+              'Booty call',
+              'One-night stand',
+              'Ex at the party',
+              'Third wheel',
+              'Sugar daddy',
+              'Morning after',
+              'Body shots',
+              'Pole dancing',
+              'Netflix and chill',
+              'Catching feelings',
+            ],
+            hard: [
+              'Fifty Shades of Grey',
+              'Midlife crisis',
+              'Honeymoon suite',
+              'Seven minutes in heaven',
+              'Truth or drink',
+              'Wardrobe malfunction',
+              'Couples therapy',
+              'Spin the bottle',
+              'Dirty Dancing',
+              'Love triangle',
+              'Jealous partner',
+              'Kiss cam',
+            ],
+          },
         };
+        const BASE_CATEGORIES = ['movies', 'cartoons', 'celebrities', 'objects', 'nature'];
         const CATEGORY_NAMES = {
           movies: 'Movies',
           cartoons: 'Cartoons & Characters',
           celebrities: 'Celebrities',
           objects: 'Objects & Things',
           nature: 'Animals & Nature',
+          adult: '18+',
           custom: 'Your word',
         };
         const DIFFICULTY_NAMES = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
@@ -6702,11 +6774,10 @@
         const state = {
           players: [],
           scores: new Map(),
-          categories: Object.keys(WORDS),
+          categories: [...BASE_CATEGORIES],
           difficulty: 'mixed',
           seconds: 60,
           own: [],
-          onlyOwn: false,
           ready: false, // players + settings chosen
           phase: 'pass', // pass → secret → acting → result
           actor: null,
@@ -6750,15 +6821,18 @@
         }
 
         function wordPool() {
-          const own = state.own.map((text) => ({ text, category: 'custom' }));
-          if (state.onlyOwn && own.length) return own;
+          const own = state.categories.includes('custom')
+            ? state.own.map((text) => ({ text, category: 'custom' }))
+            : [];
           const levels =
             state.difficulty === 'mixed' ? ['easy', 'medium', 'hard'] : [state.difficulty];
-          const built = state.categories.flatMap((category) =>
-            levels.flatMap((level) =>
-              WORDS[category][level].map((text) => ({ text, category, level })),
-            ),
-          );
+          const built = state.categories
+            .filter((category) => category !== 'custom')
+            .flatMap((category) =>
+              levels.flatMap((level) =>
+                WORDS[category][level].map((text) => ({ text, category, level })),
+              ),
+            );
           return [...built, ...own];
         }
 
@@ -7165,6 +7239,46 @@
         const settingsStart = document.getElementById('dc-settings-start');
         const settingsHint = document.getElementById('dc-settings-hint');
 
+        const customBox = categoryBoxes.find((b) => b.value === 'custom');
+        const adultBox = categoryBoxes.find((b) => b.value === 'adult');
+        const adultDialog = document.getElementById('dc-adult');
+
+        function syncCustomLabel() {
+          document.getElementById('dc-custom-label').textContent = state.own.length
+            ? `Add your own (${state.own.length})`
+            : 'Add your own';
+        }
+
+        /* 18+ needs a yes from the group each time it's turned on. */
+        adultBox.addEventListener('change', () => {
+          if (!adultBox.checked) return;
+          adultBox.checked = false;
+          syncSettings();
+          adultDialog.showModal();
+          document.getElementById('dc-adult-cancel').focus();
+        });
+        document.getElementById('dc-adult-form').addEventListener('submit', (event) => {
+          event.preventDefault();
+          adultDialog.close();
+          adultBox.checked = true;
+          syncSettings();
+          adultBox.focus();
+        });
+        const closeAdult = () => {
+          adultDialog.close();
+          adultBox.focus();
+        };
+        document.getElementById('dc-adult-cancel').addEventListener('click', closeAdult);
+        adultDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeAdult();
+        });
+
+        /* "Add your own" opens the words popup when there are no words yet. */
+        customBox.addEventListener('change', () => {
+          if (customBox.checked && !state.own.length) openWords('settings');
+        });
+
         function syncSettings() {
           const any = categoryBoxes.some((b) => b.checked);
           settingsStart.disabled = !any;
@@ -7174,6 +7288,7 @@
         let keepSettingsDraft = false; // true after Back: Next shows the edits again
 
         function openSettings() {
+          syncCustomLabel();
           if (!keepSettingsDraft) {
             categoryBoxes.forEach((b) => (b.checked = state.categories.includes(b.value)));
             difficultyRadios.forEach((r) => (r.checked = r.value === state.difficulty));
@@ -7201,10 +7316,14 @@
         settingsDialog.addEventListener('click', (event) => {
           if (event.target === settingsDialog) cancelSetup();
         });
+        adultDialog.addEventListener('click', (event) => {
+          if (event.target === adultDialog) closeAdult();
+        });
         settingsForm.addEventListener('submit', (event) => {
           event.preventDefault();
+          if (customBox.checked && !state.own.length) customBox.checked = false; // nothing to use
           const categories = categoryBoxes.filter((b) => b.checked).map((b) => b.value);
-          if (!categories.length) return;
+          if (!categories.length) return syncSettings();
           const playersChanged = draftPlayers.join('\n') !== state.players.join('\n');
           state.players = [...draftPlayers];
           [...state.scores.keys()].forEach((name) => {
@@ -7236,10 +7355,9 @@
         const wordInput = document.getElementById('dc-word');
         const wordsList = document.getElementById('dc-words-list');
         const wordsCount = document.getElementById('dc-words-count');
-        const onlyRow = document.getElementById('dc-only-row');
-        const onlyBox = document.getElementById('dc-only');
         const wordsOpen = document.getElementById('dc-words-open');
         let draftWords = [];
+        let wordsFrom = 'screen'; // 'screen' (link) or 'settings' (the category tile)
 
         function renderWords(focusIndex) {
           renderList(
@@ -7255,8 +7373,6 @@
           const n = draftWords.length;
           wordsCount.textContent = `${n} of your word${n === 1 ? '' : 's'}`;
           wordInput.disabled = n >= 100;
-          onlyRow.hidden = n === 0;
-          if (n === 0) onlyBox.checked = false;
         }
 
         function addWord() {
@@ -7269,19 +7385,25 @@
           wordInput.focus();
         }
 
-        function closeWords() {
-          wordsDialog.close();
-          wordsOpen.focus();
-        }
-
-        wordsOpen.addEventListener('click', () => {
+        function openWords(from) {
+          wordsFrom = from;
           draftWords = [...state.own];
-          onlyBox.checked = state.onlyOwn;
           wordInput.value = '';
           renderWords();
           wordsDialog.showModal();
           wordInput.focus();
-        });
+        }
+
+        function closeWords() {
+          wordsDialog.close();
+          if (wordsFrom === 'settings') {
+            customBox.checked = state.own.length > 0; // no words: the tile can't stay on
+            syncSettings();
+            customBox.focus();
+          } else wordsOpen.focus();
+        }
+
+        wordsOpen.addEventListener('click', () => openWords('screen'));
         document.getElementById('dc-word-add').addEventListener('click', addWord);
         wordInput.addEventListener('keydown', (event) => {
           if (event.key === 'Enter') {
@@ -7301,13 +7423,24 @@
         wordsForm.addEventListener('submit', (event) => {
           event.preventDefault();
           state.own = [...draftWords];
-          state.onlyOwn = onlyBox.checked && draftWords.length > 0;
           state.wordBag = [];
           wordsDialog.close();
           wordsOpen.textContent = state.own.length
             ? `Your words (${state.own.length})`
             : 'Add words';
-          wordsOpen.focus();
+          syncCustomLabel();
+          if (wordsFrom === 'settings') {
+            // The tile in the settings popup follows; saved with the settings.
+            customBox.checked = state.own.length > 0;
+            syncSettings();
+            customBox.focus();
+          } else {
+            // From the screen: your words switch their category on (or off when emptied).
+            state.categories = state.categories.filter((c) => c !== 'custom');
+            if (state.own.length) state.categories.push('custom');
+            if (!state.categories.length) state.categories = [...BASE_CATEGORIES];
+            wordsOpen.focus();
+          }
           announcer.textContent = state.own.length
             ? `${state.own.length} of your words saved.`
             : 'Using the built-in words.';
