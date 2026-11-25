@@ -2130,6 +2130,13 @@
       .dc-categories .count-option {
         padding-inline: var(--space-2) 1.9rem;
       }
+      /* Very narrow phones: a touch smaller so names clear the check badge. */
+      @media (max-width: 22rem) {
+        .dc-categories .count-option {
+          padding-inline-start: var(--space-1);
+          font-size: 0.8125rem;
+        }
+      }
 
       /* Difficulty and time: one row of four; the fill alone marks the choice. */
       .mode-options.dc-options-4 {
@@ -4471,8 +4478,12 @@
           <legend class="dc-section-label">Categories</legend>
           <div class="count-options mode-options dc-categories">
             <label class="count-option">
-              <input type="checkbox" name="dc-category" value="movies" />
-              <span>Movies</span>
+              <input type="checkbox" name="dc-category" value="bollywood" />
+              <span>Bollywood</span>
+            </label>
+            <label class="count-option">
+              <input type="checkbox" name="dc-category" value="hollywood" />
+              <span>Hollywood</span>
             </label>
             <label class="count-option">
               <input type="checkbox" name="dc-category" value="cartoons" />
@@ -8233,48 +8244,92 @@
         const primary = document.getElementById('dc-primary');
         const secondary = document.getElementById('dc-secondary');
         const WORDS = {
-          movies: {
+          bollywood: {
             easy: [
               'Sholay',
-              'Titanic',
               'Lagaan',
-              'Avatar',
               'Dangal',
-              'Frozen',
-              'Baahubali',
-              'Jurassic Park',
               '3 Idiots',
-              'The Lion King',
-              'RRR',
-              'Spider-Man',
+              'Dhoom',
+              'Krrish',
+              'Don',
+              'PK',
+              'Golmaal',
+              'Hera Pheri',
+              'Om Shanti Om',
+              'Chak De! India',
             ],
             medium: [
               'Dilwale Dulhania Le Jayenge',
-              'Inception',
               'Taare Zameen Par',
-              'Home Alone',
-              'KGF',
-              'Finding Nemo',
               'Kabhi Khushi Kabhie Gham',
-              'The Dark Knight',
-              'Pushpa',
-              'Harry Potter',
               'Chennai Express',
-              'Toy Story',
+              'Zindagi Na Milegi Dobara',
+              'Kuch Kuch Hota Hai',
+              'Munna Bhai M.B.B.S.',
+              'Jab We Met',
+              'Bajrangi Bhaijaan',
+              'Yeh Jawaani Hai Deewani',
+              'Queen',
+              'Kal Ho Naa Ho',
             ],
             hard: [
               'Gangs of Wasseypur',
-              'The Shawshank Redemption',
               'Andhadhun',
-              'Interstellar',
-              'Drishyam',
-              'Forrest Gump',
               'Swades',
-              'The Godfather',
-              'Kantara',
-              'Life of Pi',
               'Barfi!',
+              'Rang De Basanti',
+              'Mughal-e-Azam',
+              'Dil Chahta Hai',
+              'Black',
+              'Udaan',
+              'Piku',
+              'Tumbbad',
+              'The Lunchbox',
+            ],
+          },
+          hollywood: {
+            easy: [
+              'Titanic',
+              'Avatar',
+              'Frozen',
+              'Jurassic Park',
+              'The Lion King',
+              'Spider-Man',
+              'Jaws',
+              'Ghostbusters',
+              'The Avengers',
+              'Cars',
+              'King Kong',
+              'Star Wars',
+            ],
+            medium: [
+              'Inception',
+              'Home Alone',
+              'Finding Nemo',
+              'The Dark Knight',
+              'Harry Potter',
+              'Toy Story',
+              'Mission: Impossible',
+              'Pirates of the Caribbean',
+              'The Matrix',
+              'Back to the Future',
+              'Top Gun',
+              'The Terminator',
+            ],
+            hard: [
+              'The Shawshank Redemption',
+              'Interstellar',
+              'Forrest Gump',
+              'The Godfather',
+              'Life of Pi',
               'Inside Out',
+              'Pulp Fiction',
+              'Gravity',
+              'Oppenheimer',
+              'The Social Network',
+              'La La Land',
+              'Fight Club',
             ],
           },
           cartoons: {
@@ -8499,9 +8554,17 @@
             ],
           },
         };
-        const BASE_CATEGORIES = ['movies', 'cartoons', 'celebrities', 'objects', 'nature'];
+        const BASE_CATEGORIES = [
+          'bollywood',
+          'hollywood',
+          'cartoons',
+          'celebrities',
+          'objects',
+          'nature',
+        ];
         const CATEGORY_NAMES = {
-          movies: 'Movies',
+          bollywood: 'Bollywood',
+          hollywood: 'Hollywood',
           cartoons: 'Cartoons & Characters',
           celebrities: 'Celebrities',
           objects: 'Objects & Things',
