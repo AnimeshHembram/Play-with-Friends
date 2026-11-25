@@ -2581,6 +2581,72 @@
       </form>
     </dialog>
 
+    <!-- Card: which deck? -->
+    <dialog class="mode-picker" id="deck-picker" aria-labelledby="deck-picker-title">
+      <form method="dialog" id="deck-picker-form">
+        <div class="picker-header">
+          <h2 id="deck-picker-title">Choose a deck</h2>
+          <button type="button" class="icon-button" id="deck-picker-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="count-options mode-options range-options">
+          <legend class="visually-hidden">Deck</legend>
+          <label class="count-option">
+            <input type="radio" name="deck" value="classic" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <rect x="6" y="3" width="20" height="26" rx="3" />
+                <path
+                  d="M16 9c-2.6 3-6 4.6-6 7.4a3 3 0 0 0 5 2.2l-.9 3.4h3.8l-.9-3.4a3 3 0 0 0 5-2.2C22 13.6 18.6 12 16 9z"
+                  fill="currentColor"
+                  stroke="none"
+                />
+              </svg>
+            </span>
+            <span>Classic Deck</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="deck" value="custom" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <rect x="6" y="3" width="20" height="26" rx="3" />
+                <path
+                  d="M16 8.5l2.1 4.3 4.7.7-3.4 3.3.8 4.7-4.2-2.2-4.2 2.2.8-4.7-3.4-3.3 4.7-.7z"
+                  fill="currentColor"
+                  stroke="none"
+                />
+              </svg>
+            </span>
+            <span>Custom Challenge Cards</span>
+          </label>
+        </fieldset>
+
+        <p class="picker-hint" id="deck-picker-hint">Choose a deck to continue.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="deck-picker-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="deck-picker-continue"
+            disabled
+            aria-describedby="deck-picker-hint"
+          >
+            Continue
+          </button>
+        </div>
+      </form>
+    </dialog>
+
     <!-- Spinning Wheel: the options to put on the wheel -->
     <dialog
       class="mode-picker"
@@ -3392,6 +3458,7 @@
           picker.close();
           if (chosen.value === 'number') openRange();
           else if (chosen.value === 'wheel') openWheelSetup('home');
+          else if (chosen.value === 'card') openDeckPicker();
           else {
             rollOnArrival = chosen.value === 'alphabet'; // a letter appears straight away
             navigate('random-picker', chosen.value);
@@ -3865,14 +3932,82 @@
           }
         });
 
-        /** Splits a route param such as number/50 into { mode, max }. */
+        /* ── Card: deck popup (Classic Deck or Custom Challenge Cards) ──
+           Each deck opens its own screen; both are empty frames for now. */
+        const DECKS = {
+          classic: {
+            name: 'Classic Deck',
+            placeholder: 'Your classic deck will appear here.',
+          },
+          custom: {
+            name: 'Custom Challenge Cards',
+            placeholder: 'Your custom challenge cards will appear here.',
+          },
+        };
+        const deckPicker = document.getElementById('deck-picker');
+        const deckForm = document.getElementById('deck-picker-form');
+        const deckRadios = [...deckForm.elements['deck']];
+        const deckContinue = document.getElementById('deck-picker-continue');
+        const deckHint = document.getElementById('deck-picker-hint');
+        let lastDeck = null; // remembered for the next time the popup opens (this tab only)
+
+        function syncDeck() {
+          const chosen = deckRadios.some((r) => r.checked);
+          deckContinue.disabled = !chosen;
+          deckHint.hidden = chosen;
+        }
+
+        function openDeckPicker() {
+          deckRadios.forEach((r) => (r.checked = r.value === lastDeck));
+          syncDeck();
+          deckPicker.showModal();
+          (deckRadios.find((r) => r.checked) || deckRadios[0]).focus();
+        }
+
+        function closeDeckPicker() {
+          deckPicker.close();
+          option.focus();
+        }
+
+        deckRadios.forEach((r) => r.addEventListener('change', syncDeck));
+        document.getElementById('deck-picker-close').addEventListener('click', closeDeckPicker);
+        document.getElementById('deck-picker-back').addEventListener('click', () => {
+          deckPicker.close();
+          openPicker(); // back to "Choose a picker", Card still selected
+        });
+        deckPicker.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeDeckPicker();
+        });
+        deckPicker.addEventListener('click', (event) => {
+          if (event.target === deckPicker) closeDeckPicker(); // backdrop
+        });
+        deckForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const chosen = deckRadios.find((r) => r.checked);
+          if (!chosen) return;
+          lastDeck = chosen.value;
+          deckPicker.close();
+          navigate('random-picker', 'card/' + chosen.value);
+        });
+
+        /** Splits a route param such as number/50 or card/classic. */
         function parseParam(param) {
-          const [mode, extra] = param.split('/');
+          const [mode, extra, ...more] = param.split('/');
+          if (more.length) return null;
           if (mode === 'number') {
             const max = extra !== undefined && /^\d+$/.test(extra) ? parseMax(extra) : null;
             return max === null ? null : { mode, max };
           }
+          if (mode === 'card') {
+            return Object.hasOwn(DECKS, extra ?? '') ? { mode, deck: extra } : null;
+          }
           return Object.hasOwn(MODES, mode) && extra === undefined ? { mode } : null;
+        }
+
+        /** The screen's heading for a route. */
+        function routeName(route) {
+          return route.deck ? DECKS[route.deck].name : MODES[route.mode].name;
         }
 
         registerScreen('random-picker', {
@@ -3880,14 +4015,14 @@
           option,
           // Read by the router before enter(), so it follows the URL.
           get title() {
-            const mode = MODES[location.hash.slice(1).split('/')[1]];
-            return mode ? mode.name : 'Random Picker';
+            const route = parseParam(location.hash.slice(1).split('/').slice(1).join('/'));
+            return route ? routeName(route) : 'Random Picker';
           },
           accepts: (param) => parseParam(param) !== null,
           enter(param, fromNavigation) {
             const route = parseParam(param);
             const mode = MODES[route.mode];
-            title.textContent = mode.name;
+            title.textContent = routeName(route);
             const playable = route.mode === 'number' || route.mode === 'alphabet';
             const isWheel = route.mode === 'wheel';
             screenEl.dataset.mode = route.mode;
@@ -3902,7 +4037,10 @@
               if (rollOnArrival) press(); // started from the popup: roll straight away
             } else {
               resetNumberGame(0);
-              placeholder.textContent = mode.placeholder;
+              placeholder.textContent = route.deck
+                ? DECKS[route.deck].placeholder
+                : mode.placeholder;
+              if (route.deck) lastDeck = route.deck;
               if (isWheel) {
                 showWheelScreen();
                 if (spinOnArrival) spinWheel(); // PRESS in the options popup starts the game
