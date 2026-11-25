@@ -1655,6 +1655,209 @@
       }
 
       /* ════════════════════════════════════════════════════════════════
+         GAME: WHO'S MOST LIKELY TO?
+         Screen 1: player setup (add, edit, remove; 2–12, no duplicates).
+         ════════════════════════════════════════════════════════════════ */
+      .wml-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        width: min(100%, 30rem);
+        padding: var(--space-5);
+        border: 3px solid var(--color-text);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+        box-shadow: 5px 5px 0 var(--color-text);
+        text-align: left;
+      }
+
+      .wml-intro {
+        margin: calc(-1 * var(--space-3)) 0 0;
+        color: var(--color-text-muted);
+        text-align: center;
+      }
+
+      .wml-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+      }
+
+      .wml-head h2 {
+        margin: 0;
+        font-size: 1.125rem;
+      }
+
+      .wml-list {
+        max-height: min(18rem, 36dvh);
+        margin: 0;
+      }
+
+      .wml-list li {
+        flex-shrink: 0; /* rows keep their height; the list scrolls instead */
+        gap: var(--space-2);
+      }
+
+      .wml-list li[data-editing] {
+        padding-block: var(--space-2);
+      }
+
+      .wml-edit-wrap {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--space-1);
+        min-width: 0;
+      }
+
+      .wml-edit-line {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+      }
+
+      .wml-edit {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-3);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+      }
+
+      .wml-edit:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 2px;
+      }
+
+      .wml-edit[aria-invalid='true'] {
+        border-style: dashed;
+      }
+
+      .wml-error {
+        margin: 0;
+        color: var(--color-text);
+        font-size: 0.875rem;
+        font-weight: 650;
+      }
+
+      .wml-error::before {
+        content: '⚠\FE0E  ';
+      }
+
+      .wml-start {
+        align-self: center;
+      }
+
+      .wml-ready {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .wml-ready li {
+        padding: var(--space-1) var(--space-3);
+        border: 2px solid var(--color-text);
+        border-radius: 999px;
+        background: var(--color-bg);
+        font-weight: 700;
+      }
+
+      .wml-ready-note {
+        text-align: center;
+      }
+
+      .wml-ready-title {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.8125rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      @media (forced-colors: active) {
+        .wml-card {
+          box-shadow: none;
+        }
+      }
+
+      @media (orientation: portrait) and (max-height: 42rem) {
+        #most-likely {
+          gap: var(--space-3);
+        }
+        .wml-card {
+          gap: var(--space-3);
+          padding: var(--space-4);
+        }
+        .wml-list {
+          max-height: 9.5rem;
+        }
+      }
+
+      @media (orientation: landscape) and (max-height: 30rem) {
+        #most-likely {
+          gap: var(--space-2);
+        }
+        #most-likely h1 {
+          font-size: 1.25rem;
+        }
+        .wml-intro {
+          display: none;
+        }
+        .wml-card {
+          gap: var(--space-2);
+          padding: var(--space-3) var(--space-4);
+          width: min(100%, 34rem);
+        }
+        /* Two columns: name box, hint and Start on the left; the list on the right. */
+        #wml-setup {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          grid-template-areas:
+            'head list'
+            'add list'
+            'hint list'
+            'start list';
+          align-content: start;
+          column-gap: var(--space-4);
+          width: min(100%, 44rem);
+        }
+        #wml-setup .wml-head {
+          grid-area: head;
+        }
+        #wml-setup .wheel-add {
+          grid-area: add;
+        }
+        #wml-setup .picker-hint {
+          grid-area: hint;
+          margin: 0;
+        }
+        #wml-setup .wml-start {
+          grid-area: start;
+        }
+        .wml-list {
+          grid-area: list;
+          align-self: stretch;
+          max-height: calc(100dvh - 8.5rem);
+          min-height: var(--tap-min);
+        }
+        #most-likely .roll-button {
+          min-height: var(--tap-min);
+          font-size: 1.0625rem;
+        }
+      }
+
+      /* ════════════════════════════════════════════════════════════════
          GAME: DUMB CHARADES
          Reuses the Random Picker / Hot Seat screen pieces (stage, big
          text, secret card, main-style buttons, list popups).
@@ -3274,7 +3477,11 @@
               </button>
             </li>
             <li><button type="button" class="game-option">Never Have I Ever</button></li>
-            <li><button type="button" class="game-option">Who's Most Likely To?</button></li>
+            <li>
+              <button type="button" class="game-option" data-game="most-likely">
+                Who's Most Likely To?
+              </button>
+            </li>
             <li>
               <button
                 type="button"
@@ -3360,6 +3567,57 @@
           </div>
           <p class="visually-hidden" id="dice-announcer" role="status" aria-live="polite"></p>
           <button type="button" class="action-button roll-button" id="roll-button">Roll</button>
+        </section>
+
+        <!-- Who's Most Likely To?: Screen 1, player setup. -->
+        <section class="rp-game" id="most-likely" aria-labelledby="wml-title" hidden>
+          <h1 id="wml-title" tabindex="-1">Who's Most Likely To?</h1>
+
+          <div class="wml-setup-view" id="wml-setup-view">
+            <p class="wml-intro">Add everyone who's playing. Votes are private: pass the phone.</p>
+          </div>
+          <form class="wml-card" id="wml-setup" novalidate aria-labelledby="wml-setup-title">
+            <div class="wml-head">
+              <h2 id="wml-setup-title">Players</h2>
+              <p class="wheel-count" id="wml-count" aria-live="polite">0 / 12 players</p>
+            </div>
+            <div class="wheel-add">
+              <label for="wml-name" class="visually-hidden">Player name</label>
+              <input
+                type="text"
+                id="wml-name"
+                maxlength="20"
+                autocomplete="off"
+                enterkeyhint="enter"
+                placeholder="Player name, e.g. Priya"
+                aria-describedby="wml-hint"
+              />
+              <button type="button" class="text-button" id="wml-add">Add</button>
+            </div>
+            <ol class="wheel-list wml-list" id="wml-list" aria-label="Players"></ol>
+            <p class="picker-hint" id="wml-hint">Add at least 2 players.</p>
+            <button
+              type="submit"
+              class="action-button roll-button wml-start"
+              id="wml-start"
+              disabled
+              aria-describedby="wml-hint"
+            >
+              Start
+            </button>
+          </form>
+
+          <div class="wml-card" id="wml-ready" hidden>
+            <p class="wml-ready-title" id="wml-ready-title">Players</p>
+            <ul class="wml-ready" id="wml-ready-list" aria-labelledby="wml-ready-title"></ul>
+            <p class="hs-who wml-ready-note" id="wml-ready-note">
+              Everyone's in! The questions and voting come next.
+            </p>
+          </div>
+          <div class="deal-actions" id="wml-ready-actions" hidden>
+            <button type="button" class="text-button" id="wml-edit-players">Edit players</button>
+          </div>
+          <p class="visually-hidden" id="wml-announcer" role="status" aria-live="polite"></p>
         </section>
 
         <!-- Dumb Charades: a random actor, a secret word, a countdown. -->
@@ -6465,6 +6723,270 @@
             closeHand();
           },
         });
+      })();
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: WHO'S MOST LIKELY TO?
+         Screen 1 – player setup: 2–12 players, no duplicate names (any
+         letter case), add / edit in place / remove. Kept in memory for
+         this tab only. Questions and voting are the next screens.
+         ════════════════════════════════════════════════════════════════ */
+      (() => {
+        const option = document.querySelector('[data-game="most-likely"]');
+        const view = document.getElementById('most-likely');
+        const title = document.getElementById('wml-title');
+        const setupForm = document.getElementById('wml-setup');
+        const intro = document.getElementById('wml-setup-view');
+        const nameInput = document.getElementById('wml-name');
+        const addButton = document.getElementById('wml-add');
+        const list = document.getElementById('wml-list');
+        const count = document.getElementById('wml-count');
+        const hint = document.getElementById('wml-hint');
+        const startButton = document.getElementById('wml-start');
+        const readyCard = document.getElementById('wml-ready');
+        const readyList = document.getElementById('wml-ready-list');
+        const readyActions = document.getElementById('wml-ready-actions');
+        const announcer = document.getElementById('wml-announcer');
+        const MIN = 2;
+        const MAX = 12;
+        const state = { players: [], editing: -1, started: false };
+
+        const ICONS = {
+          edit:
+            '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+            '<path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+          remove:
+            '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+            '<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+          save:
+            '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+            '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        };
+
+        const clean = (text) => text.trim().replace(/\s+/g, ' ');
+
+        /** Why a name can't be used (or null): empty, or already playing. */
+        function nameProblem(name, exceptIndex = -1) {
+          if (!name) return 'Type a name first.';
+          const taken = state.players.some(
+            (p, i) => i !== exceptIndex && p.toLowerCase() === name.toLowerCase(),
+          );
+          return taken ? `${name} is already playing.` : null;
+        }
+
+        function iconButton(kind, label, onClick) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'icon-button';
+          b.setAttribute('aria-label', label);
+          b.innerHTML = ICONS[kind];
+          b.addEventListener('click', onClick);
+          return b;
+        }
+
+        function render(focus) {
+          list.replaceChildren(
+            ...state.players.map((name, i) => {
+              const li = document.createElement('li');
+              if (i === state.editing) {
+                li.dataset.editing = '';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'wml-edit';
+                input.maxLength = 20;
+                input.value = name;
+                input.autocomplete = 'off';
+                input.setAttribute('aria-label', `New name for ${name}`);
+                const error = Object.assign(document.createElement('p'), {
+                  className: 'wml-error',
+                  id: 'wml-edit-error',
+                  hidden: true,
+                });
+                input.setAttribute('aria-describedby', 'wml-edit-error');
+                const save = () => saveEdit(i, input, error);
+                input.addEventListener('keydown', (event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    save();
+                  } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    cancelEdit(i);
+                  }
+                });
+                const row = document.createElement('div');
+                row.className = 'wml-edit-wrap';
+                const line = document.createElement('div');
+                line.className = 'wml-edit-line';
+                line.append(
+                  input,
+                  iconButton('save', `Save name for ${name}`, save),
+                  iconButton('remove', `Cancel editing ${name}`, () => cancelEdit(i)),
+                );
+                row.append(line, error);
+                li.append(row);
+                return li;
+              }
+              const label = Object.assign(document.createElement('span'), {
+                className: 'wheel-item-text',
+                textContent: name,
+              });
+              li.append(
+                label,
+                iconButton('edit', `Edit ${name}`, () => startEdit(i)),
+                iconButton('remove', `Remove ${name}`, () => removePlayer(i)),
+              );
+              return li;
+            }),
+          );
+          const n = state.players.length;
+          count.textContent = `${n} / ${MAX} players`;
+          const full = n >= MAX;
+          nameInput.disabled = full;
+          addButton.disabled = full;
+          startButton.disabled = n < MIN || state.editing !== -1;
+          showHint(
+            full
+              ? `That's the maximum of ${MAX} players.`
+              : n < MIN
+                ? `Add at least ${MIN} players.`
+                : state.editing !== -1
+                  ? 'Save or cancel the name you are editing.'
+                  : '',
+          );
+          if (focus) focus();
+        }
+
+        function showHint(text) {
+          hint.textContent = text;
+          hint.hidden = !text;
+        }
+
+        function addPlayer() {
+          const name = clean(nameInput.value);
+          if (state.players.length >= MAX) return;
+          const problem = nameProblem(name);
+          if (problem) {
+            showHint(problem);
+            nameInput.setAttribute('aria-invalid', 'true');
+            return nameInput.focus();
+          }
+          state.players.push(name);
+          nameInput.value = '';
+          nameInput.setAttribute('aria-invalid', 'false');
+          render(() => {
+            list.lastElementChild?.scrollIntoView({ block: 'nearest' });
+            (nameInput.disabled ? startButton : nameInput).focus();
+          });
+          announcer.textContent = `${name} added. ${state.players.length} players.`;
+        }
+
+        function removePlayer(i) {
+          const [name] = state.players.splice(i, 1);
+          if (state.editing === i) state.editing = -1;
+          else if (state.editing > i) state.editing--;
+          render(() => {
+            const buttons = list.querySelectorAll('button[aria-label^="Edit "]');
+            (buttons[Math.min(i, buttons.length - 1)] || nameInput).focus();
+          });
+          announcer.textContent = `${name} removed. ${state.players.length} players.`;
+        }
+
+        function startEdit(i) {
+          state.editing = i;
+          render(() => {
+            const input = list.querySelector('.wml-edit');
+            input.focus();
+            input.select();
+          });
+        }
+
+        function cancelEdit(i) {
+          state.editing = -1;
+          render(() => list.children[i]?.querySelector('button')?.focus());
+        }
+
+        function saveEdit(i, input, error) {
+          const name = clean(input.value);
+          const problem = nameProblem(name, i);
+          if (problem) {
+            error.textContent = problem;
+            error.hidden = false;
+            input.setAttribute('aria-invalid', 'true');
+            return input.focus();
+          }
+          const old = state.players[i];
+          state.players[i] = name;
+          state.editing = -1;
+          render(() => list.children[i]?.querySelector('button')?.focus());
+          if (old !== name) announcer.textContent = `${old} renamed to ${name}.`;
+        }
+
+        nameInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Enter adds the player; Start starts
+            addPlayer();
+          }
+        });
+        nameInput.addEventListener('input', () => {
+          if (nameInput.getAttribute('aria-invalid') === 'true') {
+            nameInput.setAttribute('aria-invalid', 'false');
+            render();
+          }
+        });
+        addButton.addEventListener('click', addPlayer);
+
+        /* ── Start → players ready (questions come next) ─────────────── */
+        function showSetup() {
+          state.started = false;
+          intro.hidden = false;
+          setupForm.hidden = false;
+          readyCard.hidden = true;
+          readyActions.hidden = true;
+          render();
+        }
+
+        function showReady() {
+          state.started = true;
+          intro.hidden = true;
+          setupForm.hidden = true;
+          readyCard.hidden = false;
+          readyActions.hidden = false;
+          readyList.replaceChildren(
+            ...state.players.map((name) =>
+              Object.assign(document.createElement('li'), { textContent: name }),
+            ),
+          );
+        }
+
+        setupForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (state.players.length < MIN || state.editing !== -1) return;
+          showReady();
+          document.getElementById('wml-edit-players').focus();
+          announcer.textContent = `Starting with ${state.players.length} players.`;
+        });
+        document.getElementById('wml-edit-players').addEventListener('click', () => {
+          showSetup();
+          nameInput.focus();
+        });
+
+        registerScreen('most-likely', {
+          view,
+          option,
+          title: "Who's Most Likely To?",
+          enter(_param, fromNavigation) {
+            state.editing = -1;
+            if (state.started) showReady();
+            else showSetup();
+            if (fromNavigation) {
+              if (state.started) title.focus();
+              else nameInput.focus();
+            }
+          },
+        });
+
+        option.addEventListener('click', () => navigate('most-likely'));
       })();
 
       /* ════════════════════════════════════════════════════════════════
