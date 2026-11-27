@@ -34,6 +34,14 @@ In the playground, Hot Seat has taken Pick a Card's place in the game list.
 
 Player counts in each game's metadata are provisional and will be confirmed when that game is built.
 
+## Development workflow
+
+- Keep the `main` branch stable.
+- Build new features on dedicated feature branches.
+- Run the relevant tests before opening a pull request.
+- Submit changes through pull requests targeting `main`.
+- Keep game-specific logic isolated within its respective game module.
+
 ## How it's used
 
 - **Shared-device mode:** several people play on one phone or laptop. The game keeps its session in that browser tab.
