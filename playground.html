@@ -644,7 +644,7 @@
         }
 
         .flip-card {
-          --card-h: max(7.5rem, calc((100dvh - 9.5rem) / 2));
+          --card-h: max(6rem, calc((100dvh - 10rem) / 2));
           width: min(100%, 30rem);
         }
 
@@ -657,6 +657,169 @@
       @media (prefers-reduced-motion: reduce) {
         .flip-inner {
           transition: none;
+        }
+      }
+
+      /* ── Truth or Dare: Spin mode ─────────────────────────────────── */
+      .tod-spin {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(var(--space-4), 2.5vh, var(--space-6));
+        width: 100%;
+      }
+      .tod-spin[hidden],
+      .flip-cards[hidden] {
+        display: none;
+      }
+      .tod-spin-side {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4);
+        width: 100%;
+      }
+      .spin-card {
+        --card-h: clamp(9rem, calc(100dvh - 24rem), 17rem);
+        position: relative;
+        width: min(100%, 26rem);
+        height: var(--card-h);
+        perspective: 1200px;
+        container-type: size;
+      }
+      .spin-inner {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+      }
+      .spin-face {
+        border-width: 2px;
+      }
+      .spin-truth {
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+      }
+      .spin-dare {
+        transform: rotateY(180deg);
+        background: var(--color-text);
+        color: var(--color-bg);
+      }
+      .spin-idle-mark {
+        display: none;
+        font-size: clamp(3rem, 40cqh, 6rem);
+        font-weight: 800;
+        line-height: 1;
+      }
+      /* Before the first spin: a neutral card with a question mark. */
+      .spin-card[data-idle] .spin-truth {
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-text);
+        border-style: dashed;
+      }
+      .spin-card[data-idle] .spin-truth .face-word {
+        display: none;
+      }
+      .spin-card[data-idle] .spin-idle-mark {
+        display: block;
+      }
+      .tod-result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-1);
+        max-width: 24rem;
+        min-height: 4.5rem;
+        text-align: center;
+      }
+      .tod-result p {
+        margin: 0;
+      }
+      .tod-result-word {
+        font-size: 1.375rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+      .tod-result-text {
+        color: var(--color-text-muted);
+        font-weight: 550;
+        line-height: 1.35;
+      }
+      .tod-spin-side .roll-button[aria-disabled='true'] {
+        cursor: progress;
+        opacity: 0.6;
+      }
+      .flip-cards .hs-links {
+        margin-top: calc(var(--space-2) * -1);
+      }
+      /* Mode popup tiles: a name with a short line under it. */
+      .tod-mode-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .tod-mode-name {
+        font-weight: 800;
+      }
+      .tod-mode-desc {
+        font-size: 0.8125rem;
+        font-weight: 550;
+        line-height: 1.25;
+        opacity: 0.85;
+      }
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .tod-spin {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          align-items: center;
+          gap: var(--space-4);
+          max-width: 46rem;
+        }
+        .tod-spin[hidden] {
+          display: none;
+        }
+        .spin-card {
+          --card-h: clamp(7rem, calc(100dvh - 8rem), 14rem);
+          width: 100%;
+        }
+        .tod-spin-side {
+          gap: var(--space-3);
+        }
+        .tod-result {
+          min-height: 0;
+        }
+        .tod-result-word {
+          font-size: 1.125rem;
+        }
+        .tod-result-text {
+          font-size: 0.875rem;
+        }
+        /* Pick: "Change mode" moves up beside the top buttons so both
+           stacked cards keep their height. */
+        .flip-cards .hs-links {
+          position: fixed;
+          top: max(var(--space-3), calc(var(--safe-top) + var(--space-2)));
+          right: max(var(--space-3), calc(var(--safe-right) + var(--space-2)));
+          z-index: 10;
+          margin: 0;
+        }
+        .flip-cards .hs-links .hs-more {
+          min-height: var(--tap-min);
+        }
+        #tod-mode-intro {
+          display: none;
+        }
+      }
+      @media (forced-colors: active) {
+        .spin-face {
+          forced-color-adjust: none;
+          border-color: CanvasText;
+          background: Canvas;
+          color: CanvasText;
+        }
+        .spin-dare {
+          background: CanvasText;
+          color: Canvas;
         }
       }
 
@@ -3823,11 +3986,42 @@
           </ul>
         </section>
 
-        <!-- Truth or Dare screen (UI prototype: no questions or game logic yet). -->
+        <!-- Truth or Dare screen. Two ways to play, chosen in a popup first:
+             spin one card (the game picks) or pick one of two cards. -->
         <section class="tod" id="truth-or-dare" aria-labelledby="tod-title" hidden>
           <h1 id="tod-title" tabindex="-1">Truth or Dare</h1>
 
-          <div class="flip-cards">
+          <!-- Spin: one card turns fast, slows down and lands on Truth or Dare. -->
+          <div class="tod-spin" id="tod-spin" hidden>
+            <div class="spin-card" id="spin-card" data-idle aria-hidden="true">
+              <div class="spin-inner" id="spin-inner">
+                <div class="face spin-face spin-truth">
+                  <span class="face-word">TRUTH</span>
+                  <span class="spin-idle-mark">?</span>
+                </div>
+                <div class="face spin-face spin-dare">
+                  <span class="face-word">DARE</span>
+                </div>
+              </div>
+            </div>
+            <div class="tod-spin-side">
+              <div class="tod-result" id="tod-result">
+                <p class="tod-result-word" id="tod-result-word">Ready?</p>
+                <p class="tod-result-text" id="tod-result-text">
+                  Tap Spin. The game picks Truth or Dare for you.
+                </p>
+              </div>
+              <button type="button" class="action-button roll-button" id="tod-spin-button">
+                Spin
+              </button>
+              <div class="hs-links">
+                <button type="button" class="hs-more tod-change">Change mode</button>
+              </div>
+            </div>
+          </div>
+          <p class="visually-hidden" id="tod-announcer" role="status" aria-live="polite"></p>
+
+          <div class="flip-cards" id="tod-pick" hidden>
             <button
               type="button"
               class="flip-card truth"
@@ -3865,6 +4059,9 @@
                 </span>
               </span>
             </button>
+            <div class="hs-links">
+              <button type="button" class="hs-more tod-change">Change mode</button>
+            </div>
           </div>
         </section>
 
@@ -4678,6 +4875,82 @@
         <div class="picker-actions">
           <button type="button" class="text-button" id="dc-words-cancel">Cancel</button>
           <button type="submit" class="action-button" id="dc-words-save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Truth or Dare: how to play (chosen before the game starts) -->
+    <dialog
+      class="mode-picker"
+      id="tod-mode"
+      aria-labelledby="tod-mode-title"
+      aria-describedby="tod-mode-intro"
+    >
+      <form method="dialog" id="tod-mode-form">
+        <div class="picker-header">
+          <h2 id="tod-mode-title">How do you want to play?</h2>
+          <button type="button" class="icon-button" id="tod-mode-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p class="hs-mode-intro" id="tod-mode-intro">Let the game choose, or choose yourself.</p>
+
+        <fieldset class="count-options mode-options range-options hs-mode-options tod-mode-options">
+          <legend class="visually-hidden">How to play</legend>
+          <label class="count-option">
+            <input type="radio" name="tod-mode" value="spin" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <rect x="10" y="5" width="12" height="22" rx="2.5" />
+                <path d="M4 12a13 13 0 0 0 0 8M28 12a13 13 0 0 1 0 8" stroke-linecap="round" />
+                <path
+                  d="M2.5 18.5 4 20.5l2-1.5M29.5 13.5 28 11.5l-2 1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="tod-mode-text">
+              <span class="tod-mode-name">Spin one card</span>
+              <span class="tod-mode-desc">The game picks for you</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="tod-mode" value="pick" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <rect x="6" y="3" width="20" height="11" rx="2.5" />
+                <rect x="6" y="18" width="20" height="11" rx="2.5" />
+              </svg>
+            </span>
+            <span class="tod-mode-text">
+              <span class="tod-mode-name">Pick a card</span>
+              <span class="tod-mode-desc">Choose Truth or Dare yourself</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <p class="picker-hint" id="tod-mode-hint">Choose one to start.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="tod-mode-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="tod-mode-start"
+            disabled
+            aria-describedby="tod-mode-hint"
+          >
+            Start
+          </button>
         </div>
       </form>
     </dialog>
@@ -5628,11 +5901,48 @@
       });
 
       /* ════════════════════════════════════════════════════════════════
-         GAME: TRUTH OR DARE  (UI prototype: no questions or logic yet)
+         GAME: TRUTH OR DARE
+         A popup first asks how to play: Spin (one card turns and the game
+         picks Truth or Dare) or Pick (two cards, the player chooses).
+         Questions aren't written yet: the cards show placeholders.
          ════════════════════════════════════════════════════════════════ */
       (() => {
         const option = document.querySelector('[data-game="truth-or-dare"]');
+        const title = document.getElementById('tod-title');
         const flipCards = [...document.querySelectorAll('.flip-card')];
+        const pickView = document.getElementById('tod-pick');
+        const spinView = document.getElementById('tod-spin');
+        const spinCard = document.getElementById('spin-card');
+        const spinInner = document.getElementById('spin-inner');
+        const spinButton = document.getElementById('tod-spin-button');
+        const resultWord = document.getElementById('tod-result-word');
+        const resultText = document.getElementById('tod-result-text');
+        const announcer = document.getElementById('tod-announcer');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const SPIN_MS = 2800;
+        const state = {
+          mode: null, // 'spin' | 'pick'
+          angle: 0, // the spin card's current turn, in degrees
+          spinning: false,
+          animation: null,
+          history: [], // last results, so one side can't come up 3 times running
+        };
+
+        /* Fair coin from crypto (no bias). */
+        function coin() {
+          const buffer = new Uint8Array(1);
+          crypto.getRandomValues(buffer);
+          return buffer[0] < 128;
+        }
+
+        /* The game's pick: 50/50, but never the same three times in a row. */
+        function choose() {
+          const [a, b] = state.history.slice(-2);
+          const pick =
+            a && a === b ? (a === 'truth' ? 'dare' : 'truth') : coin() ? 'truth' : 'dare';
+          state.history = [...state.history.slice(-1), pick];
+          return pick;
+        }
 
         function setFlipped(card, flipped) {
           card.setAttribute('aria-pressed', String(flipped));
@@ -5641,17 +5951,170 @@
           card.querySelector('.face-back').setAttribute('aria-hidden', String(!flipped));
         }
 
+        function setSpinning(on) {
+          state.spinning = on;
+          spinButton.setAttribute('aria-disabled', String(on));
+        }
+
+        function stopSpin() {
+          if (state.animation) state.animation.cancel();
+          state.animation = null;
+          setSpinning(false);
+        }
+
+        function resetSpin() {
+          stopSpin();
+          state.angle = 0;
+          spinInner.style.transform = 'rotateY(0deg)';
+          spinCard.setAttribute('data-idle', '');
+          resultWord.textContent = 'Ready?';
+          resultText.textContent = 'Tap Spin. The game picks Truth or Dare for you.';
+          spinButton.textContent = 'Spin';
+        }
+
+        function showResult(pick) {
+          const truth = pick === 'truth';
+          resultWord.textContent = truth ? 'Truth!' : 'Dare!';
+          resultText.textContent = truth
+            ? 'Your truth question will appear here.'
+            : 'Your dare will appear here.';
+          spinButton.textContent = 'Spin again';
+          announcer.textContent = truth ? 'Truth!' : 'Dare!';
+        }
+
+        function spin() {
+          if (state.spinning) return;
+          const pick = choose();
+          // Land face up on Truth (0°) or Dare (180°) after several fast turns.
+          const rest = ((state.angle % 360) + 360) % 360;
+          const goal = pick === 'truth' ? 0 : 180;
+          const turns = reducedMotion.matches ? 0 : 6 + (coin() ? 1 : 0);
+          const to =
+            state.angle -
+            rest +
+            turns * 360 +
+            goal +
+            (reducedMotion.matches || goal >= rest ? 0 : 360);
+          const from = state.angle;
+          state.angle = to;
+          spinCard.removeAttribute('data-idle');
+          resultWord.textContent = 'Spinning…';
+          resultText.textContent = '';
+          announcer.textContent = '';
+          if (reducedMotion.matches) {
+            spinInner.style.transform = `rotateY(${to}deg)`;
+            showResult(pick);
+            return;
+          }
+          setSpinning(true);
+          spinInner.style.transform = `rotateY(${to}deg)`;
+          // Full speed at first, then slowing down until it stops.
+          state.animation = spinInner.animate(
+            [{ transform: `rotateY(${from}deg)` }, { transform: `rotateY(${to}deg)` }],
+            { duration: SPIN_MS, easing: 'cubic-bezier(0.1, 0.75, 0.2, 1)' },
+          );
+          state.animation.onfinish = () => {
+            state.animation = null;
+            setSpinning(false);
+            showResult(pick);
+          };
+        }
+
+        spinButton.addEventListener('click', spin);
+
+        function startMode() {
+          pickView.hidden = state.mode !== 'pick';
+          spinView.hidden = state.mode !== 'spin';
+          flipCards.forEach((card) => setFlipped(card, false)); // always start face up
+          resetSpin();
+          announcer.textContent = '';
+        }
+
         registerScreen('truth-or-dare', {
           view: document.getElementById('truth-or-dare'),
           option,
           title: 'Truth or Dare',
           enter(_param, fromNavigation) {
-            flipCards.forEach((card) => setFlipped(card, false)); // always start face up
-            if (fromNavigation) document.getElementById('tod-title').focus();
+            pickView.hidden = true;
+            spinView.hidden = true;
+            flipCards.forEach((card) => setFlipped(card, false));
+            resetSpin();
+            if (fromNavigation) title.focus();
+            openMode('start'); // before the game starts: how do you want to play?
+          },
+          leave() {
+            stopSpin();
+            if (modeDialog.open) modeDialog.close();
           },
         });
 
         option.addEventListener('click', () => navigate('truth-or-dare'));
+
+        /* ── How to play (popup) ─────────────────────────────────────── */
+        const modeDialog = document.getElementById('tod-mode');
+        const modeForm = document.getElementById('tod-mode-form');
+        const modeRadios = [...modeForm.elements['tod-mode']];
+        const modeStart = document.getElementById('tod-mode-start');
+        const modeHint = document.getElementById('tod-mode-hint');
+        const modeBack = document.getElementById('tod-mode-back');
+        let modeFrom = 'start'; // 'start' (before the game) or 'change' (during it)
+        let changeButton = null;
+
+        function syncMode() {
+          const chosen = modeRadios.some((r) => r.checked);
+          modeStart.disabled = !chosen;
+          modeHint.hidden = chosen;
+        }
+
+        function openMode(from, opener) {
+          modeFrom = from;
+          changeButton = opener || null;
+          modeRadios.forEach((r) => (r.checked = r.value === state.mode));
+          modeStart.textContent = from === 'start' ? 'Start' : 'Play';
+          modeBack.textContent = from === 'start' ? 'Back' : 'Cancel';
+          syncMode();
+          if (!modeDialog.open) modeDialog.showModal();
+          (modeRadios.find((r) => r.checked) || modeRadios[0]).focus();
+        }
+
+        function cancelMode() {
+          modeDialog.close();
+          if (modeFrom === 'start')
+            backButton.click(); // no game without a choice: home
+          else changeButton?.focus();
+        }
+
+        modeRadios.forEach((r) => r.addEventListener('change', syncMode));
+        modeBack.addEventListener('click', cancelMode);
+        document.getElementById('tod-mode-close').addEventListener('click', cancelMode);
+        modeDialog.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: same as Back/Cancel
+          cancelMode();
+        });
+        modeDialog.addEventListener('click', (event) => {
+          if (event.target === modeDialog) cancelMode(); // backdrop
+        });
+        modeForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const chosen = modeRadios.find((r) => r.checked);
+          if (!chosen) return;
+          const same = modeFrom === 'change' && chosen.value === state.mode;
+          modeDialog.close();
+          if (same) return changeButton?.focus();
+          state.mode = chosen.value;
+          startMode();
+          if (state.mode === 'spin') spinButton.focus();
+          else flipCards[0].focus();
+          announcer.textContent =
+            state.mode === 'spin'
+              ? 'Spin one card. Tap Spin and the game picks Truth or Dare.'
+              : 'Pick a card: Truth or Dare.';
+        });
+        for (const button of document.querySelectorAll('.tod-change')) {
+          button.addEventListener('click', () => {
+            if (!state.spinning) openMode('change', button);
+          });
+        }
 
         // Each card flips on its own, back and forth.
         for (const card of flipCards) {
