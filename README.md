@@ -2,7 +2,23 @@
 
 A browser-based multi-game party platform. Open the site, pick a game, play. No install, no account, no login.
 
-> **Status: foundation complete (Phases 01–02), minimal UI canvas in progress.** The app opens on a blank, responsive full-screen canvas with a menu in the top-left corner for appearance settings (light/dark/system, background and accent colour). No games are playable yet. The seven planned games are registered as metadata only and show as "coming soon".
+> **Status: foundation complete (Phases 01–02), minimal UI canvas in progress.** The app opens on a blank, responsive full-screen canvas with a menu in the top-left corner for appearance settings (light/dark/system, background and accent colour). No games are playable in the React app yet. The seven planned games are registered as metadata only and show as "coming soon". Six games can already be played in the [playground](#playground-playgroundhtml).
+
+## Playground (`playground.html`)
+
+`playground.html` is a single self-contained file where the games are built and tried out before they move into the React app. Open it straight in a browser (double-clicking it works): no install, no build, no network and no dependencies. Game state stays in memory for that tab only (no cookies, no local storage). It has the same appearance settings as the app and works on phones, tablets and desktops, in portrait and landscape, with touch, mouse, keyboard and screen readers. Animations respect the reduced-motion setting.
+
+| Game                  | What you can play now                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Truth or Dare         | A popup asks how to play. **Spin one card:** the card spins fast, slows down and stops on Truth or Dare; the game picks 50/50, but never the same side three times in a row. **Pick a card:** Truth on top, Dare below, and the player taps one. The mode can be changed during the game. Questions aren't written yet, so the cards show placeholders. |
+| Never Have I Ever     | Not built yet.                                                                                                                                                                                                                                                                                                                                          |
+| Who's Most Likely To? | 2–12 players, then a level: **Easy**, **Ultimate** or **Toughest** (18+, asks for confirmation, and players can add their own questions). Each round the phone is passed around so everyone votes in private, then the results show bars and ties, plus a running vote tally.                                                                           |
+| Random Picker         | Card (a classic deck dealt to 2–12 players, or custom challenge cards with a red "done" line), a spinning wheel with 2–50 options, a random number (1–10, or 1 to any number up to 1,000,000) and a random letter.                                                                                                                                      |
+| Dumb Charades         | 2–12 players. Categories: Bollywood, Hollywood, Cartoons & Characters, Celebrities, Objects & Things, Animals & Nature, 18+ (asks for confirmation) and your own words. Choose a difficulty and a timer; the game keeps score.                                                                                                                          |
+| Rolling Dice          | Roll 1–3 3D dice.                                                                                                                                                                                                                                                                                                                                       |
+| Hot Seat              | A random letter is drawn, and whoever's name starts with it takes the Hot Seat. Questions come from everyone in turn or from the player next to them, using built-in questions and your own.                                                                                                                                                            |
+
+In the playground, Hot Seat has taken Pick a Card's place in the game list.
 
 ## Planned games
 
