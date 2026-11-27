@@ -691,6 +691,9 @@
         position: absolute;
         inset: 0;
         transform-style: preserve-3d;
+        /* The turn is driven by script; no CSS transition (not even the
+           reduced-motion 0.01ms one), so the face always matches the result. */
+        transition-property: none;
       }
       .spin-face {
         border-width: 2px;
@@ -806,7 +809,8 @@
         .flip-cards .hs-links .hs-more {
           min-height: var(--tap-min);
         }
-        #tod-mode-intro {
+        #tod-mode-intro,
+        #tod-ask-intro {
           display: none;
         }
       }
@@ -4949,6 +4953,81 @@
             disabled
             aria-describedby="tod-mode-hint"
           >
+            Next
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Truth or Dare: who asks (second popup, after how to play) -->
+    <dialog
+      class="mode-picker"
+      id="tod-ask"
+      aria-labelledby="tod-ask-title"
+      aria-describedby="tod-ask-intro"
+    >
+      <form method="dialog" id="tod-ask-form">
+        <div class="picker-header">
+          <h2 id="tod-ask-title">Who asks?</h2>
+          <button type="button" class="icon-button" id="tod-ask-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p class="hs-mode-intro" id="tod-ask-intro">Where do the questions and dares come from?</p>
+
+        <fieldset class="count-options mode-options range-options hs-mode-options tod-mode-options">
+          <legend class="visually-hidden">Who asks</legend>
+          <label class="count-option">
+            <input type="radio" name="tod-ask" value="random" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <rect x="5" y="5" width="22" height="22" rx="4" />
+                <circle cx="11" cy="11" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="21" cy="11" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="16" cy="16" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="11" cy="21" r="1.6" fill="currentColor" stroke="none" />
+                <circle cx="21" cy="21" r="1.6" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
+            <span class="tod-mode-text">
+              <span class="tod-mode-name">Random ask</span>
+              <span class="tod-mode-desc">The game gives a question or dare</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="tod-ask" value="friends" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <path d="M4 6h16v11H11l-5 4v-4H4z" stroke-linejoin="round" />
+                <path d="M23 12h5v10h-2v4l-5-4h-6v-1" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="tod-mode-text">
+              <span class="tod-mode-name">Ask by friends</span>
+              <span class="tod-mode-desc">Your friends make one up</span>
+            </span>
+          </label>
+        </fieldset>
+
+        <p class="picker-hint" id="tod-ask-hint">Choose one to start.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="tod-ask-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="tod-ask-start"
+            disabled
+            aria-describedby="tod-ask-hint"
+          >
             Start
           </button>
         </div>
@@ -5902,9 +5981,10 @@
 
       /* ════════════════════════════════════════════════════════════════
          GAME: TRUTH OR DARE
-         A popup first asks how to play: Spin (one card turns and the game
-         picks Truth or Dare) or Pick (two cards, the player chooses).
-         Questions aren't written yet: the cards show placeholders.
+         Two popups come first. How to play: Spin (one card turns and the
+         game picks Truth or Dare) or Pick (two cards, the player chooses).
+         Then who asks: Random (the game gives a question or dare) or
+         Friends (the other players make one up).
          ════════════════════════════════════════════════════════════════ */
       (() => {
         const option = document.querySelector('[data-game="truth-or-dare"]');
@@ -5920,8 +6000,99 @@
         const announcer = document.getElementById('tod-announcer');
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
         const SPIN_MS = 2800;
+        const TRUTHS = [
+          "What's the most embarrassing thing you've ever done?",
+          'Who was your first crush?',
+          "What's a secret you've never told anyone here?",
+          "What's the biggest lie you've ever told?",
+          "What's your most annoying habit?",
+          "What's the worst gift you've ever received?",
+          'Have you ever pretended to like a gift?',
+          "What's the silliest thing you're afraid of?",
+          "What's the last thing you searched on your phone?",
+          'Who in this room would you swap lives with for a day?',
+          "What's the most childish thing you still do?",
+          "What's the weirdest dream you've ever had?",
+          'Have you ever blamed someone else for something you did?',
+          "What's your guilty-pleasure song?",
+          "What's the most trouble you've ever been in?",
+          'Which app do you spend way too much time on?',
+          "What's the worst haircut you've ever had?",
+          "What's something you've never told your parents?",
+          'Whose profile did you last check out online?',
+          "What's the most embarrassing photo on your phone?",
+          'Have you ever cheated in a game?',
+          "What's the meanest thing you've ever said to someone?",
+          "What's the strangest thing you've ever eaten?",
+          "What's your biggest regret so far?",
+          'Who here do you text the most?',
+          'If you could change one thing about yourself, what would it be?',
+          'Have you ever ghosted someone?',
+          "What's the most money you've wasted on something useless?",
+          "What's the worst thing you've ever cooked?",
+          "What's the most embarrassing nickname you've had?",
+          'Have you ever laughed at a really wrong moment?',
+          "What's the worst excuse you've used to skip something?",
+          "What's your most irrational pet peeve?",
+          "What do you do when you're home alone?",
+          "What's something you pretend to understand but don't?",
+          'Who was your celebrity crush growing up?',
+          "What's the most embarrassing thing you've said to a teacher?",
+          'If you could erase one memory, what would it be?',
+          "What's the pettiest thing you've ever done?",
+          "What's a rumour you once believed?",
+        ];
+        const DARES = [
+          'Do your best impression of someone in this room.',
+          'Sing the chorus of a song the group chooses.',
+          'Talk in an accent until your next turn.',
+          'Dance with no music for 30 seconds.',
+          'Show everyone the last photo in your camera roll.',
+          'Do 15 jumping jacks.',
+          'Speak only in questions until your next turn.',
+          'Do your best runway walk across the room.',
+          'Let the player on your left give you a new hairstyle.',
+          'Call a friend and sing them happy birthday.',
+          'Hold a plank for 30 seconds.',
+          'Act like a chicken until someone laughs.',
+          'Do a dramatic reading of the last message you received.',
+          'Balance a spoon on your nose for 10 seconds.',
+          'Say the alphabet backwards.',
+          'Do your best celebrity impression.',
+          'Try to lick your elbow.',
+          'Make up a rap about the player on your right.',
+          'Act out your most-used emoji.',
+          'Wear your socks on your hands until your next turn.',
+          "Read today's news headlines like a TV news anchor.",
+          "Sell an object the group picks like it's a TV advert.",
+          'Keep a straight face for 30 seconds while everyone tries to make you laugh.',
+          'Let the group choose your profile picture for one hour.',
+          'Moonwalk across the room.',
+          'Tell a joke. If nobody laughs, do another dare.',
+          'Pretend to be a cat for one minute.',
+          'Act out a famous movie scene without speaking.',
+          'Do your best evil laugh.',
+          'Read the last text you sent out loud.',
+          'Sing everything you say until your next turn.',
+          'Give a 30-second speech on why socks are important.',
+          'Do 10 squats while naming fruits.',
+          'Give every player a compliment.',
+          'Narrate what the player next to you is doing like a nature documentary.',
+          'Talk like a robot until your next turn.',
+          'Draw a portrait of the player opposite you in 30 seconds.',
+          'Do an impression of a baby learning to walk.',
+          'Text someone "I just saw a ghost" and show the reply.',
+          'Let the group pick a word you must say in every sentence until your next turn.',
+        ];
+        const FRIENDS_TEXT = {
+          truth: 'Your friends ask you a truth question.',
+          dare: 'Your friends give you a dare.',
+        };
         const state = {
           mode: null, // 'spin' | 'pick'
+          ask: null, // 'random' | 'friends'
+          bags: { truth: [], dare: [] }, // shuffled, so nothing repeats until all are used
+          last: { truth: null, dare: null },
           angle: 0, // the spin card's current turn, in degrees
           spinning: false,
           animation: null,
@@ -5933,6 +6104,37 @@
           const buffer = new Uint8Array(1);
           crypto.getRandomValues(buffer);
           return buffer[0] < 128;
+        }
+
+        /* Fair random integer 0..max-1 (crypto, no modulo bias). */
+        function randomBelow(max) {
+          const buffer = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= limit);
+          return buffer[0] % max;
+        }
+
+        /* Next question or dare: every one comes up once before any repeats. */
+        function draw(kind) {
+          if (!state.bags[kind].length) {
+            const list = [...(kind === 'truth' ? TRUTHS : DARES)];
+            for (let i = list.length - 1; i > 0; i--) {
+              const j = randomBelow(i + 1);
+              [list[i], list[j]] = [list[j], list[i]];
+            }
+            // never the same one twice in a row across a refill
+            if (list.length > 1 && list[list.length - 1] === state.last[kind])
+              [list[0], list[list.length - 1]] = [list[list.length - 1], list[0]];
+            state.bags[kind] = list;
+          }
+          state.last[kind] = state.bags[kind].pop();
+          return state.last[kind];
+        }
+
+        /* What the card says: a random question/dare, or a nudge to the friends. */
+        function cardText(kind) {
+          return state.ask === 'friends' ? FRIENDS_TEXT[kind] : draw(kind);
         }
 
         /* The game's pick: 50/50, but never the same three times in a row. */
@@ -5969,17 +6171,17 @@
           spinCard.setAttribute('data-idle', '');
           resultWord.textContent = 'Ready?';
           resultText.textContent = 'Tap Spin. The game picks Truth or Dare for you.';
+          flipCards.forEach((card) => (card.querySelector('.face-text').textContent = ''));
           spinButton.textContent = 'Spin';
         }
 
         function showResult(pick) {
           const truth = pick === 'truth';
+          const text = cardText(pick);
           resultWord.textContent = truth ? 'Truth!' : 'Dare!';
-          resultText.textContent = truth
-            ? 'Your truth question will appear here.'
-            : 'Your dare will appear here.';
+          resultText.textContent = text;
           spinButton.textContent = 'Spin again';
-          announcer.textContent = truth ? 'Truth!' : 'Dare!';
+          announcer.textContent = `${truth ? 'Truth!' : 'Dare!'} ${text}`;
         }
 
         function spin() {
@@ -6045,6 +6247,7 @@
           leave() {
             stopSpin();
             if (modeDialog.open) modeDialog.close();
+            if (askDialog.open) askDialog.close();
           },
         });
 
@@ -6066,11 +6269,10 @@
           modeHint.hidden = chosen;
         }
 
-        function openMode(from, opener) {
+        function openMode(from, opener, keepPick) {
           modeFrom = from;
           changeButton = opener || null;
-          modeRadios.forEach((r) => (r.checked = r.value === state.mode));
-          modeStart.textContent = from === 'start' ? 'Start' : 'Play';
+          if (!keepPick) modeRadios.forEach((r) => (r.checked = r.value === state.mode));
           modeBack.textContent = from === 'start' ? 'Back' : 'Cancel';
           syncMode();
           if (!modeDialog.open) modeDialog.showModal();
@@ -6079,6 +6281,7 @@
 
         function cancelMode() {
           modeDialog.close();
+          askDialog.close();
           if (modeFrom === 'start')
             backButton.click(); // no game without a choice: home
           else changeButton?.focus();
@@ -6094,21 +6297,69 @@
         modeDialog.addEventListener('click', (event) => {
           if (event.target === modeDialog) cancelMode(); // backdrop
         });
+        // How to play → Next → who asks.
         modeForm.addEventListener('submit', (event) => {
           event.preventDefault();
-          const chosen = modeRadios.find((r) => r.checked);
-          if (!chosen) return;
-          const same = modeFrom === 'change' && chosen.value === state.mode;
+          if (!modeRadios.some((r) => r.checked)) return;
           modeDialog.close();
-          if (same) return changeButton?.focus();
-          state.mode = chosen.value;
+          openAsk();
+        });
+
+        /* ── Who asks (second popup) ─────────────────────────────────── */
+        const askDialog = document.getElementById('tod-ask');
+        const askForm = document.getElementById('tod-ask-form');
+        const askRadios = [...askForm.elements['tod-ask']];
+        const askStart = document.getElementById('tod-ask-start');
+        const askHint = document.getElementById('tod-ask-hint');
+
+        function syncAsk() {
+          const chosen = askRadios.some((r) => r.checked);
+          askStart.disabled = !chosen;
+          askHint.hidden = chosen;
+        }
+
+        function openAsk() {
+          askRadios.forEach((r) => (r.checked = r.value === state.ask));
+          askStart.textContent = modeFrom === 'start' ? 'Start' : 'Play';
+          syncAsk();
+          askDialog.showModal();
+          (askRadios.find((r) => r.checked) || askRadios[0]).focus();
+        }
+
+        function askBack() {
+          askDialog.close();
+          openMode(modeFrom, changeButton, true); // back to how to play, choice kept
+        }
+
+        askRadios.forEach((r) => r.addEventListener('change', syncAsk));
+        document.getElementById('tod-ask-back').addEventListener('click', askBack);
+        document.getElementById('tod-ask-close').addEventListener('click', cancelMode);
+        askDialog.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: one step back
+          askBack();
+        });
+        askDialog.addEventListener('click', (event) => {
+          if (event.target === askDialog) cancelMode(); // backdrop
+        });
+        askForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const mode = modeRadios.find((r) => r.checked)?.value;
+          const ask = askRadios.find((r) => r.checked)?.value;
+          if (!mode || !ask) return;
+          askDialog.close();
+          if (modeFrom === 'change' && mode === state.mode && ask === state.ask)
+            return changeButton?.focus();
+          state.mode = mode;
+          state.ask = ask;
           startMode();
           if (state.mode === 'spin') spinButton.focus();
           else flipCards[0].focus();
+          const who =
+            ask === 'random' ? 'The game gives the question.' : 'Your friends ask the question.';
           announcer.textContent =
             state.mode === 'spin'
-              ? 'Spin one card. Tap Spin and the game picks Truth or Dare.'
-              : 'Pick a card: Truth or Dare.';
+              ? `Spin one card. Tap Spin and the game picks Truth or Dare. ${who}`
+              : `Pick a card: Truth or Dare. ${who}`;
         });
         for (const button of document.querySelectorAll('.tod-change')) {
           button.addEventListener('click', () => {
@@ -6116,11 +6367,14 @@
           });
         }
 
-        // Each card flips on its own, back and forth.
+        // Each card flips on its own, back and forth. Turning one over shows
+        // a fresh question or dare.
         for (const card of flipCards) {
-          card.addEventListener('click', () =>
-            setFlipped(card, card.getAttribute('aria-pressed') !== 'true'),
-          );
+          card.addEventListener('click', () => {
+            const show = card.getAttribute('aria-pressed') !== 'true';
+            if (show) card.querySelector('.face-text').textContent = cardText(card.dataset.card);
+            setFlipped(card, show);
+          });
         }
       })();
 
