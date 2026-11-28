@@ -755,6 +755,18 @@
       .flip-cards .hs-links {
         margin-top: calc(var(--space-2) * -1);
       }
+      /* What's being played (level · who asks), beside "Change mode". */
+      .tod-setup {
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+      }
+      .tod-setup:empty {
+        display: none;
+      }
+      .hs-links:has(.tod-setup) {
+        align-items: center;
+      }
       /* Mode popup tiles: a name with a short line under it. */
       .tod-mode-text {
         display: flex;
@@ -810,8 +822,25 @@
           min-height: var(--tap-min);
         }
         #tod-mode-intro,
-        #tod-ask-intro {
+        #tod-ask-intro,
+        #tod-level-intro,
+        #nh-level-intro {
           display: none;
+        }
+        #nh-level form {
+          gap: var(--space-2);
+          padding-block: var(--space-3);
+        }
+        /* Never Have I Ever has four levels: one row of four. */
+        #nh-level .mode-options.wml-levels {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        #nh-level .wml-level-name {
+          font-size: 1rem;
+        }
+        #tod-level form {
+          gap: var(--space-2);
+          padding-block: var(--space-3);
         }
       }
       @media (forced-colors: active) {
@@ -2577,9 +2606,15 @@
       }
       .wml-level-desc {
         color: var(--color-text-muted);
+        transition: color 120ms ease;
         font-size: 0.875rem;
         font-weight: 550;
         line-height: 1.3;
+      }
+      /* On the selected (filled) tile the muted grey is hard to read. */
+      .wml-levels .count-option:has(input:checked) .wml-level-desc {
+        color: inherit;
+        opacity: 0.92;
       }
       .wml-level-bars {
         display: flex;
@@ -2602,9 +2637,23 @@
       .wml-level-bars i:nth-child(3) {
         height: 100%;
       }
+      /* Four-level meters (Never Have I Ever): one more, taller step. */
+      .wml-level-bars:has(i:nth-child(4)) i:nth-child(1) {
+        height: 30%;
+      }
+      .wml-level-bars:has(i:nth-child(4)) i:nth-child(2) {
+        height: 52%;
+      }
+      .wml-level-bars:has(i:nth-child(4)) i:nth-child(3) {
+        height: 76%;
+      }
+      .wml-level-bars i:nth-child(4) {
+        height: 100%;
+      }
       .wml-level-bars[data-level='1'] i:nth-child(-n + 1),
       .wml-level-bars[data-level='2'] i:nth-child(-n + 2),
-      .wml-level-bars[data-level='3'] i {
+      .wml-level-bars[data-level='3'] i:nth-child(-n + 3),
+      .wml-level-bars[data-level='4'] i {
         background: currentColor;
       }
       @media (forced-colors: active) {
@@ -2614,13 +2663,27 @@
         }
         .wml-level-bars[data-level='1'] i:nth-child(-n + 1),
         .wml-level-bars[data-level='2'] i:nth-child(-n + 2),
-        .wml-level-bars[data-level='3'] i {
+        .wml-level-bars[data-level='3'] i:nth-child(-n + 3),
+        .wml-level-bars[data-level='4'] i {
           background: CanvasText;
         }
       }
 
       /* Short phones: tighter level tiles so the popup fits without scrolling. */
       @media (orientation: portrait) and (max-height: 42rem) {
+        /* Four levels (Never Have I Ever): a 2 × 2 grid of stacked tiles. */
+        #nh-level .mode-options.wml-levels {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #nh-level .wml-levels .count-option {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--space-1);
+          padding: var(--space-2) var(--space-3);
+        }
+        #nh-level .wml-level-bars {
+          height: 1rem;
+        }
         .mode-options.wml-levels {
           gap: var(--space-2);
         }
@@ -3804,6 +3867,14 @@
         cursor: progress;
       }
 
+      /* Never Have I Ever: a short line under the player count. */
+      .nh-note {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        text-align: center;
+      }
+
       @media (orientation: landscape) and (max-height: 30rem) {
         .rp-game {
           gap: var(--space-3);
@@ -3953,7 +4024,11 @@
                 Truth or Dare
               </button>
             </li>
-            <li><button type="button" class="game-option">Never Have I Ever</button></li>
+            <li>
+              <button type="button" class="game-option" data-game="never-have-i-ever">
+                Never Have I Ever
+              </button>
+            </li>
             <li>
               <button type="button" class="game-option" data-game="most-likely">
                 Who's Most Likely To?
@@ -4019,6 +4094,7 @@
                 Spin
               </button>
               <div class="hs-links">
+                <span class="tod-setup"></span>
                 <button type="button" class="hs-more tod-change">Change mode</button>
               </div>
             </div>
@@ -4064,6 +4140,7 @@
               </span>
             </button>
             <div class="hs-links">
+              <span class="tod-setup"></span>
               <button type="button" class="hs-more tod-change">Change mode</button>
             </div>
           </div>
@@ -4180,6 +4257,23 @@
             <button type="button" class="hs-more" id="dc-setup-open">Players &amp; settings</button>
             <button type="button" class="hs-more" id="dc-words-open">Add words</button>
           </div>
+        </section>
+
+        <!-- Never Have I Ever: first how many are playing, then the level
+             (questions come next). -->
+        <section class="rp-game" id="never-have-i-ever" aria-labelledby="nh-title" hidden>
+          <h1 id="nh-title" tabindex="-1">Never Have I Ever</h1>
+          <div class="rp-stage" id="nh-stage">
+            <div class="rp-result">
+              <span class="rp-number" id="nh-count" aria-hidden="true">?</span>
+              <span class="rp-range" id="nh-caption">Choose how many are playing</span>
+            </div>
+          </div>
+          <p class="nh-note" id="nh-note" hidden>Questions are coming next.</p>
+          <div class="hs-links" id="nh-links" hidden>
+            <button type="button" class="hs-more" id="nh-players-open">Change setup</button>
+          </div>
+          <p class="visually-hidden" id="nh-announcer" role="status" aria-live="polite"></p>
         </section>
 
         <!-- Hot Seat: a random letter picks the player, then a question. -->
@@ -5027,6 +5121,243 @@
             id="tod-ask-start"
             disabled
             aria-describedby="tod-ask-hint"
+          >
+            Next
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Truth or Dare: level (third popup) -->
+    <dialog
+      class="mode-picker"
+      id="tod-level"
+      aria-labelledby="tod-level-title"
+      aria-describedby="tod-level-intro"
+    >
+      <form method="dialog" id="tod-level-form" novalidate>
+        <div class="picker-header">
+          <h2 id="tod-level-title">Choose a level</h2>
+          <button type="button" class="icon-button" id="tod-level-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="hs-mode-intro" id="tod-level-intro">How bold should it get?</p>
+        <fieldset class="count-options mode-options wml-levels">
+          <legend class="visually-hidden">Level</legend>
+          <label class="count-option">
+            <input type="radio" name="tod-level" value="easy" />
+            <span class="wml-level-bars" data-level="1" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Easy</span>
+              <span class="wml-level-desc">Light, friendly questions and dares</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="tod-level" value="medium" />
+            <span class="wml-level-bars" data-level="2" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Medium</span>
+              <span class="wml-level-desc">Bolder and more personal</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="tod-level" value="ultimate" />
+            <span class="wml-level-bars" data-level="3" aria-hidden="true"
+              ><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Ultimate</span>
+              <span class="wml-level-desc">The toughest. 18+ only</span>
+            </span>
+          </label>
+        </fieldset>
+        <p class="picker-hint" id="tod-level-hint">Choose a level to start.</p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="tod-level-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="tod-level-start"
+            disabled
+            aria-describedby="tod-level-hint"
+          >
+            Start
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Truth or Dare: 18+ check for Ultimate -->
+    <dialog
+      class="mode-picker"
+      id="tod-adult"
+      aria-labelledby="tod-adult-title"
+      aria-describedby="tod-adult-text"
+    >
+      <form method="dialog" id="tod-adult-form">
+        <div class="picker-header">
+          <h2 id="tod-adult-title">18+ questions</h2>
+        </div>
+        <p class="wheel-setup-intro" id="tod-adult-text">
+          Ultimate has truths and dares for adults only. Choose it only if everyone playing is 18 or
+          older.
+        </p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="tod-adult-cancel">Cancel</button>
+          <button type="submit" class="action-button" id="tod-adult-yes">Everyone is 18+</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Never Have I Ever: how many players -->
+    <dialog
+      class="mode-picker"
+      id="nh-players"
+      aria-labelledby="nh-players-title"
+      aria-describedby="nh-players-intro"
+    >
+      <form method="dialog" id="nh-players-form" novalidate>
+        <div class="picker-header">
+          <h2 id="nh-players-title">How many players?</h2>
+          <button type="button" class="icon-button" id="nh-players-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p class="hs-mode-intro" id="nh-players-intro">Everyone in the group can play.</p>
+
+        <div class="range-field">
+          <label class="visually-hidden" for="nh-players-input">Number of players</label>
+          <div class="stepper">
+            <button type="button" class="text-button" id="nh-minus" aria-label="Fewer players">
+              −
+            </button>
+            <input
+              type="text"
+              id="nh-players-input"
+              inputmode="numeric"
+              autocomplete="off"
+              enterkeyhint="done"
+              maxlength="2"
+              placeholder="2–20"
+              aria-describedby="nh-players-hint"
+            />
+            <button type="button" class="text-button" id="nh-plus" aria-label="More players">
+              +
+            </button>
+          </div>
+        </div>
+
+        <p class="picker-hint" id="nh-players-hint">Enter 2 to 20 players.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="nh-players-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="nh-players-start"
+            disabled
+            aria-describedby="nh-players-hint"
+          >
+            Next
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Never Have I Ever: level (after the number of players) -->
+    <dialog
+      class="mode-picker"
+      id="nh-level"
+      aria-labelledby="nh-level-title"
+      aria-describedby="nh-level-intro"
+    >
+      <form method="dialog" id="nh-level-form" novalidate>
+        <div class="picker-header">
+          <h2 id="nh-level-title">Choose a level</h2>
+          <button type="button" class="icon-button" id="nh-level-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="hs-mode-intro" id="nh-level-intro">How bold should it get?</p>
+        <fieldset class="count-options mode-options wml-levels">
+          <legend class="visually-hidden">Level</legend>
+          <label class="count-option">
+            <input type="radio" name="nh-level" value="easy" />
+            <span class="wml-level-bars" data-level="1" aria-hidden="true"
+              ><i></i><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Easy</span>
+              <span class="wml-level-desc">Light, fun questions</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="nh-level" value="medium" />
+            <span class="wml-level-bars" data-level="2" aria-hidden="true"
+              ><i></i><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Medium</span>
+              <span class="wml-level-desc">A bit more personal</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="nh-level" value="hard" />
+            <span class="wml-level-bars" data-level="3" aria-hidden="true"
+              ><i></i><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Hard</span>
+              <span class="wml-level-desc">Tough, revealing questions</span>
+            </span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="nh-level" value="bold" />
+            <span class="wml-level-bars" data-level="4" aria-hidden="true"
+              ><i></i><i></i><i></i><i></i
+            ></span>
+            <span class="wml-level-text">
+              <span class="wml-level-name">Bold</span>
+              <span class="wml-level-desc">The most daring questions</span>
+            </span>
+          </label>
+        </fieldset>
+        <p class="picker-hint" id="nh-level-hint">Choose a level to start.</p>
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="nh-level-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="nh-level-start"
+            disabled
+            aria-describedby="nh-level-hint"
           >
             Start
           </button>
@@ -5984,7 +6315,8 @@
          Two popups come first. How to play: Spin (one card turns and the
          game picks Truth or Dare) or Pick (two cards, the player chooses).
          Then who asks: Random (the game gives a question or dare) or
-         Friends (the other players make one up).
+         Friends (the other players make one up). Then the level: Easy,
+         Medium or Ultimate (the toughest, 18+ only).
          ════════════════════════════════════════════════════════════════ */
       (() => {
         const option = document.querySelector('[data-game="truth-or-dare"]');
@@ -6000,6 +6332,72 @@
         const announcer = document.getElementById('tod-announcer');
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
         const SPIN_MS = 2800;
+        // Easy: light and friendly.
+        const EASY_TRUTHS = [
+          "What's your favourite movie of all time?",
+          "What's the best gift you've ever received?",
+          "What's your hidden talent?",
+          'What was your favourite cartoon as a kid?',
+          'If you could have any superpower, what would it be?',
+          "What's your dream holiday destination?",
+          "What's the last song you listened to?",
+          'Which celebrity would you love to meet?',
+          'What do you like most about the player on your left?',
+          "What's the funniest thing that happened to you this year?",
+          'What did you want to be when you grew up?',
+          "What's your go-to midnight snack?",
+          'Are you a morning person or a night owl?',
+          "What's one food you can't stand?",
+          "What's the best advice you've ever received?",
+          'If you won the lottery tomorrow, what would you buy first?',
+          "What's your favourite memory with someone in this room?",
+          'Which animal are you most like?',
+          "What's the most useless thing you're good at?",
+          "What's the last thing that made you laugh out loud?",
+          "What's a song you know every word of?",
+          'Which fictional world would you love to live in?',
+          "What's your favourite festival, and why?",
+          "What's the best compliment you've ever received?",
+          'Tea or coffee, and why?',
+          "What's your comfort movie?",
+          'If you could time travel, which year would you visit?',
+          "What's a skill you'd love to learn?",
+          'Who was your favourite teacher, and why?',
+          'What does your perfect weekend look like?',
+        ];
+        const EASY_DARES = [
+          'Do your best happy dance.',
+          'Make the funniest face you can and hold it for 10 seconds.',
+          'Say a tongue twister three times fast.',
+          'Make an animal sound and let everyone guess the animal.',
+          'Hop on one foot for 15 seconds.',
+          'Sing "Happy Birthday" in a whisper.',
+          'Draw a smiley face on your hand.',
+          'Speak like a cartoon character until your next turn.',
+          'Give the player on your right a high five and a compliment.',
+          'Hold your best superhero pose for 10 seconds.',
+          'Hum a song and let the group guess it.',
+          "Pretend to be a waiter and take everyone's order.",
+          'Walk like a penguin across the room.',
+          'Name five fruits in five seconds.',
+          'Say something nice about every player.',
+          'Do your best robot dance.',
+          "Give today's weather forecast like a TV weather reporter.",
+          'Clap a rhythm and let the group copy it.',
+          'Act like a monkey for 15 seconds.',
+          'Spell your name backwards out loud.',
+          'Balance a book on your head and walk across the room.',
+          'Do five push-ups (wall push-ups count).',
+          'Do an impression of a famous cartoon character.',
+          'Freeze like a statue until someone makes you smile.',
+          'Tell everyone your favourite joke.',
+          'Show off your best dance move.',
+          'Make up a short poem about this room.',
+          'Sneeze in slow motion.',
+          'Act out brushing your teeth without a toothbrush.',
+          'Give a tour of this room like a museum guide.',
+        ];
+        // Medium: bolder and more personal.
         const TRUTHS = [
           "What's the most embarrassing thing you've ever done?",
           'Who was your first crush?',
@@ -6084,15 +6482,87 @@
           'Text someone "I just saw a ghost" and show the reply.',
           'Let the group pick a word you must say in every sentence until your next turn.',
         ];
-        const FRIENDS_TEXT = {
-          truth: 'Your friends ask you a truth question.',
-          dare: 'Your friends give you a dare.',
+        // Ultimate: the toughest, adults only (18+ check first).
+        const ULTIMATE_TRUTHS = [
+          "What's the wildest thing you've ever done at a party?",
+          'Who in this room would you kiss if you had to?',
+          "What's your biggest turn-on?",
+          "What's your biggest turn-off?",
+          'Have you ever had a one-night stand?',
+          "What's the most daring place you've ever kissed someone?",
+          'Have you ever hooked up with an ex?',
+          "What's the most embarrassing thing that's happened to you on a date?",
+          'Have you ever sent a spicy text to the wrong person?',
+          "What's your secret fantasy date?",
+          'Have you ever been caught making out?',
+          "What's the boldest pickup line you've ever used?",
+          'Who was your last kiss?',
+          'Have you ever dated two people at the same time?',
+          "Have you ever had a crush on a friend's partner?",
+          "What's something you've done that you'd never tell your parents?",
+          'Have you ever lied about your age to get in somewhere?',
+          "What's the drunkest you've ever been?",
+          'Have you ever woken up with no idea where you were?',
+          'Who here would you go on a date with?',
+          "What's your worst hookup story?",
+          'Have you ever flirted your way out of trouble?',
+          "What's the most attractive thing about the player on your right?",
+          "Have you ever slid into someone's DMs? What happened?",
+          "What's the most rebellious thing you've ever done?",
+          'Have you ever gone skinny-dipping?',
+          "What's a secret about your love life nobody here knows?",
+          'Which celebrity would you leave everything for?',
+          "What's the most scandalous thing on your phone right now?",
+          "What's the biggest risk you've ever taken for someone you liked?",
+        ];
+        const ULTIMATE_DARES = [
+          'Send a flirty text to the last person you messaged and show the reply.',
+          'Let the group read your last five messages.',
+          'Do your sexiest dance for 20 seconds.',
+          'Whisper a pickup line to the player on your left.',
+          'Kiss the player on your right on the cheek (only if they say yes).',
+          'Call your crush and tell them a joke.',
+          'Show everyone the last profile you searched for.',
+          'Take a sip of a drink the group mixes for you.',
+          'Do a slow-motion, seductive walk across the room.',
+          'Let the player on your left scroll through your photos for 30 seconds.',
+          'Read out the last flirty message you received.',
+          'Show the group your most recent flirty chat.',
+          'Slow dance with the player of your choice for one song.',
+          'Swap a piece of clothing with the player on your right.',
+          'Give the player the group chooses a flirty compliment.',
+          'Describe your ideal kiss in detail.',
+          'Give a flirty speech to a household object.',
+          'Show your best first-date move on a pillow.',
+          'Rate everyone in the room out of ten for looks.',
+          'Hold eye contact with the player opposite you for 30 seconds without laughing.',
+          'Tell your most embarrassing secret in a seductive voice.',
+          'Let the group write a dating-profile bio for you and read it out.',
+          'Sit on the lap of the player of your choice until your next turn (only if they say yes).',
+          'Call someone and tell them you love them.',
+          'Show everyone how you flirt.',
+          'Let the player on your left send one emoji to anyone in your contacts.',
+          'Do three body rolls.',
+          'Show the last selfie you took.',
+          "Let the group choose a new contact name for you in someone's phone.",
+          'Act out your perfect kiss with your hand.',
+        ];
+        const LEVELS = {
+          easy: { name: 'Easy', truth: EASY_TRUTHS, dare: EASY_DARES, a: 'an easy' },
+          medium: { name: 'Medium', truth: TRUTHS, dare: DARES, a: 'a medium' },
+          ultimate: { name: 'Ultimate', truth: ULTIMATE_TRUTHS, dare: ULTIMATE_DARES, a: 'an 18+' },
         };
+        const friendsText = (kind, level) =>
+          kind === 'truth'
+            ? `Your friends ask you ${LEVELS[level].a} truth question.`
+            : `Your friends give you ${LEVELS[level].a} dare.`;
         const state = {
           mode: null, // 'spin' | 'pick'
           ask: null, // 'random' | 'friends'
-          bags: { truth: [], dare: [] }, // shuffled, so nothing repeats until all are used
-          last: { truth: null, dare: null },
+          level: null, // 'easy' | 'medium' | 'ultimate'
+          adultOk: false, // the group said everyone is 18+ (this tab only)
+          bags: {}, // per level and side, shuffled: nothing repeats until all are used
+          last: {},
           angle: 0, // the spin card's current turn, in degrees
           spinning: false,
           animation: null,
@@ -6117,24 +6587,25 @@
 
         /* Next question or dare: every one comes up once before any repeats. */
         function draw(kind) {
-          if (!state.bags[kind].length) {
-            const list = [...(kind === 'truth' ? TRUTHS : DARES)];
+          const key = `${state.level}-${kind}`;
+          if (!state.bags[key]?.length) {
+            const list = [...LEVELS[state.level][kind]];
             for (let i = list.length - 1; i > 0; i--) {
               const j = randomBelow(i + 1);
               [list[i], list[j]] = [list[j], list[i]];
             }
             // never the same one twice in a row across a refill
-            if (list.length > 1 && list[list.length - 1] === state.last[kind])
+            if (list.length > 1 && list[list.length - 1] === state.last[key])
               [list[0], list[list.length - 1]] = [list[list.length - 1], list[0]];
-            state.bags[kind] = list;
+            state.bags[key] = list;
           }
-          state.last[kind] = state.bags[kind].pop();
-          return state.last[kind];
+          state.last[key] = state.bags[key].pop();
+          return state.last[key];
         }
 
         /* What the card says: a random question/dare, or a nudge to the friends. */
         function cardText(kind) {
-          return state.ask === 'friends' ? FRIENDS_TEXT[kind] : draw(kind);
+          return state.ask === 'friends' ? friendsText(kind, state.level) : draw(kind);
         }
 
         /* The game's pick: 50/50, but never the same three times in a row. */
@@ -6248,6 +6719,8 @@
             stopSpin();
             if (modeDialog.open) modeDialog.close();
             if (askDialog.open) askDialog.close();
+            if (levelDialog.open) levelDialog.close();
+            if (adultDialog.open) adultDialog.close();
           },
         });
 
@@ -6262,6 +6735,9 @@
         const modeBack = document.getElementById('tod-mode-back');
         let modeFrom = 'start'; // 'start' (before the game) or 'change' (during it)
         let changeButton = null;
+        // Moving Back and Next between the popups keeps what was picked.
+        let freshAsk = true;
+        let freshLevel = true;
 
         function syncMode() {
           const chosen = modeRadios.some((r) => r.checked);
@@ -6272,7 +6748,12 @@
         function openMode(from, opener, keepPick) {
           modeFrom = from;
           changeButton = opener || null;
-          if (!keepPick) modeRadios.forEach((r) => (r.checked = r.value === state.mode));
+          if (!keepPick) {
+            // A fresh start: all three popups show what's being played now.
+            modeRadios.forEach((r) => (r.checked = r.value === state.mode));
+            freshAsk = true;
+            freshLevel = true;
+          }
           modeBack.textContent = from === 'start' ? 'Back' : 'Cancel';
           syncMode();
           if (!modeDialog.open) modeDialog.showModal();
@@ -6282,6 +6763,8 @@
         function cancelMode() {
           modeDialog.close();
           askDialog.close();
+          levelDialog.close();
+          adultDialog.close();
           if (modeFrom === 'start')
             backButton.click(); // no game without a choice: home
           else changeButton?.focus();
@@ -6319,8 +6802,8 @@
         }
 
         function openAsk() {
-          askRadios.forEach((r) => (r.checked = r.value === state.ask));
-          askStart.textContent = modeFrom === 'start' ? 'Start' : 'Play';
+          if (freshAsk) askRadios.forEach((r) => (r.checked = r.value === state.ask));
+          freshAsk = false;
           syncAsk();
           askDialog.showModal();
           (askRadios.find((r) => r.checked) || askRadios[0]).focus();
@@ -6341,25 +6824,109 @@
         askDialog.addEventListener('click', (event) => {
           if (event.target === askDialog) cancelMode(); // backdrop
         });
+        // Who asks → Next → level.
         askForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (!askRadios.some((r) => r.checked)) return;
+          askDialog.close();
+          openLevel();
+        });
+
+        /* ── Level (third popup) ─────────────────────────────────────── */
+        const levelDialog = document.getElementById('tod-level');
+        const levelForm = document.getElementById('tod-level-form');
+        const levelRadios = [...levelForm.elements['tod-level']];
+        const levelStart = document.getElementById('tod-level-start');
+        const levelHint = document.getElementById('tod-level-hint');
+        const adultDialog = document.getElementById('tod-adult');
+        const ultimateRadio = levelRadios.find((r) => r.value === 'ultimate');
+
+        function syncLevel() {
+          const chosen = levelRadios.some((r) => r.checked);
+          levelStart.disabled = !chosen;
+          levelHint.hidden = chosen;
+        }
+
+        function openLevel() {
+          if (freshLevel) levelRadios.forEach((r) => (r.checked = r.value === state.level));
+          freshLevel = false;
+          levelStart.textContent = modeFrom === 'start' ? 'Start' : 'Play';
+          syncLevel();
+          levelDialog.showModal();
+          (levelRadios.find((r) => r.checked) || levelRadios[0]).focus();
+        }
+
+        function levelBack() {
+          levelDialog.close();
+          askDialog.showModal(); // back to who asks, choice kept
+          (askRadios.find((r) => r.checked) || askRadios[0]).focus();
+        }
+
+        levelRadios.forEach((r) => r.addEventListener('change', syncLevel));
+        /* Ultimate is 18+: the group confirms once (per tab). */
+        ultimateRadio.addEventListener('change', () => {
+          if (!ultimateRadio.checked || state.adultOk) return;
+          ultimateRadio.checked = false;
+          syncLevel();
+          adultDialog.showModal();
+          document.getElementById('tod-adult-cancel').focus();
+        });
+        document.getElementById('tod-adult-form').addEventListener('submit', (event) => {
+          event.preventDefault();
+          adultDialog.close();
+          state.adultOk = true;
+          ultimateRadio.checked = true;
+          syncLevel();
+          ultimateRadio.focus();
+        });
+        const closeAdult = () => {
+          adultDialog.close();
+          syncLevel();
+          (levelRadios.find((r) => r.checked) || ultimateRadio).focus();
+        };
+        document.getElementById('tod-adult-cancel').addEventListener('click', closeAdult);
+        adultDialog.addEventListener('cancel', (event) => {
+          event.preventDefault();
+          closeAdult();
+        });
+        document.getElementById('tod-level-back').addEventListener('click', levelBack);
+        document.getElementById('tod-level-close').addEventListener('click', cancelMode);
+        levelDialog.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: one step back
+          levelBack();
+        });
+        levelDialog.addEventListener('click', (event) => {
+          if (event.target === levelDialog) cancelMode(); // backdrop
+        });
+        levelForm.addEventListener('submit', (event) => {
           event.preventDefault();
           const mode = modeRadios.find((r) => r.checked)?.value;
           const ask = askRadios.find((r) => r.checked)?.value;
-          if (!mode || !ask) return;
-          askDialog.close();
-          if (modeFrom === 'change' && mode === state.mode && ask === state.ask)
+          const level = levelRadios.find((r) => r.checked)?.value;
+          if (!mode || !ask || !level) return;
+          levelDialog.close();
+          if (
+            modeFrom === 'change' &&
+            mode === state.mode &&
+            ask === state.ask &&
+            level === state.level
+          )
             return changeButton?.focus();
           state.mode = mode;
           state.ask = ask;
+          state.level = level;
           startMode();
+          const name = LEVELS[level].name;
+          const setup = `${name} · ${ask === 'random' ? 'Random ask' : 'Ask by friends'}`;
+          document.querySelectorAll('.tod-setup').forEach((el) => (el.textContent = setup));
           if (state.mode === 'spin') spinButton.focus();
           else flipCards[0].focus();
           const who =
             ask === 'random' ? 'The game gives the question.' : 'Your friends ask the question.';
           announcer.textContent =
             state.mode === 'spin'
-              ? `Spin one card. Tap Spin and the game picks Truth or Dare. ${who}`
-              : `Pick a card: Truth or Dare. ${who}`;
+              ? `Spin one card. Tap Spin and the game picks Truth or Dare. ${who} Level: ${name}.`
+              : `Pick a card: Truth or Dare. ${who} Level: ${name}.`;
         });
         for (const button of document.querySelectorAll('.tod-change')) {
           button.addEventListener('click', () => {
@@ -9996,6 +10563,188 @@
         });
 
         option.addEventListener('click', () => navigate('dumb-charades'));
+      })();
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: NEVER HAVE I EVER
+         Opening the game asks two things in popups: how many are playing
+         (2–20), then the level (Easy, Medium, Hard or Bold). The questions come
+         in the next step.
+         ════════════════════════════════════════════════════════════════ */
+      (() => {
+        const MIN = 2;
+        const MAX = 20;
+        const LEVEL_NAMES = { easy: 'Easy', medium: 'Medium', hard: 'Hard', bold: 'Bold' };
+        const view = document.getElementById('never-have-i-ever');
+        const option = document.querySelector('[data-game="never-have-i-ever"]');
+        const title = document.getElementById('nh-title');
+        const countEl = document.getElementById('nh-count');
+        const caption = document.getElementById('nh-caption');
+        const note = document.getElementById('nh-note');
+        const links = document.getElementById('nh-links');
+        const changeButton = document.getElementById('nh-players-open');
+        const announcer = document.getElementById('nh-announcer');
+        // Popup 1: how many players
+        const dialog = document.getElementById('nh-players');
+        const form = document.getElementById('nh-players-form');
+        const input = document.getElementById('nh-players-input');
+        const next = document.getElementById('nh-players-start');
+        const back = document.getElementById('nh-players-back');
+        const hint = document.getElementById('nh-players-hint');
+        // Popup 2: level
+        const levelDialog = document.getElementById('nh-level');
+        const levelForm = document.getElementById('nh-level-form');
+        const levelRadios = [...levelForm.elements['nh-level']];
+        const levelStart = document.getElementById('nh-level-start');
+        const levelHint = document.getElementById('nh-level-hint');
+        // players/level: this game; last*: offered next time (this tab only)
+        const state = {
+          players: null,
+          level: null,
+          lastPlayers: null,
+          lastLevel: null,
+          from: 'start', // 'start' (before the game) | 'change' (during it)
+        };
+
+        function parse(text) {
+          const clean = text.trim();
+          if (!/^\d{1,2}$/.test(clean)) return null;
+          const n = Number(clean);
+          return n >= MIN && n <= MAX ? n : null;
+        }
+
+        function sync() {
+          const n = parse(input.value);
+          const typedBad = input.value.trim() !== '' && n === null;
+          input.setAttribute('aria-invalid', String(typedBad));
+          next.disabled = n === null;
+          hint.hidden = n !== null;
+          hint.textContent = `Enter ${MIN} to ${MAX} players.`;
+        }
+
+        function step(by) {
+          const current = parse(input.value);
+          const value = current === null ? (by > 0 ? MIN : MAX) : current + by;
+          input.value = String(Math.min(MAX, Math.max(MIN, value)));
+          sync();
+        }
+
+        function showSetup() {
+          const n = state.players;
+          countEl.textContent = n ? String(n) : '?';
+          countEl.style.setProperty('--len', String(Math.max(2, countEl.textContent.length)));
+          caption.textContent = n
+            ? `players · ${LEVEL_NAMES[state.level]}`
+            : 'Choose how many are playing';
+          note.hidden = !n;
+          links.hidden = !n;
+        }
+
+        /* Opening fresh fills both popups with the current (or last) choices;
+           Back from the level popup keeps whatever was just picked. */
+        function openPlayers(from, keep) {
+          if (!keep) {
+            state.from = from;
+            const players = state.players ?? state.lastPlayers;
+            const level = state.level ?? state.lastLevel;
+            input.value = players ? String(players) : '';
+            levelRadios.forEach((r) => (r.checked = r.value === level));
+          }
+          back.textContent = state.from === 'start' ? 'Back' : 'Cancel';
+          sync();
+          if (!dialog.open) dialog.showModal();
+          input.focus();
+        }
+
+        function cancel() {
+          dialog.close();
+          levelDialog.close();
+          if (state.from === 'start')
+            backButton.click(); // no game without a setup: home
+          else changeButton.focus();
+        }
+
+        input.addEventListener('input', sync);
+        document.getElementById('nh-minus').addEventListener('click', () => step(-1));
+        document.getElementById('nh-plus').addEventListener('click', () => step(1));
+        back.addEventListener('click', cancel);
+        document.getElementById('nh-players-close').addEventListener('click', cancel);
+        dialog.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: same as Back/Cancel
+          cancel();
+        });
+        dialog.addEventListener('click', (event) => {
+          if (event.target === dialog) cancel(); // backdrop
+        });
+        // Players → Next → level.
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (parse(input.value) === null) return input.focus();
+          dialog.close();
+          openLevel();
+        });
+
+        function syncLevel() {
+          const chosen = levelRadios.some((r) => r.checked);
+          levelStart.disabled = !chosen;
+          levelHint.hidden = chosen;
+        }
+
+        function openLevel() {
+          levelStart.textContent = state.from === 'start' ? 'Start' : 'Save';
+          syncLevel();
+          levelDialog.showModal();
+          (levelRadios.find((r) => r.checked) || levelRadios[0]).focus();
+        }
+
+        function levelBack() {
+          levelDialog.close();
+          openPlayers(state.from, true); // back to the number, as typed
+        }
+
+        levelRadios.forEach((r) => r.addEventListener('change', syncLevel));
+        document.getElementById('nh-level-back').addEventListener('click', levelBack);
+        document.getElementById('nh-level-close').addEventListener('click', cancel);
+        levelDialog.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: one step back
+          levelBack();
+        });
+        levelDialog.addEventListener('click', (event) => {
+          if (event.target === levelDialog) cancel(); // backdrop
+        });
+        levelForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const players = parse(input.value);
+          const level = levelRadios.find((r) => r.checked)?.value;
+          if (players === null || !level) return;
+          levelDialog.close();
+          state.players = state.lastPlayers = players;
+          state.level = state.lastLevel = level;
+          showSetup();
+          changeButton.focus();
+          announcer.textContent = `${players} players, ${LEVEL_NAMES[level]}. Questions are coming next.`;
+        });
+        changeButton.addEventListener('click', () => openPlayers('change'));
+
+        registerScreen('never-have-i-ever', {
+          view,
+          option,
+          title: 'Never Have I Ever',
+          enter(_param, fromNavigation) {
+            state.players = null; // a new game: ask again (last choices are offered)
+            state.level = null;
+            showSetup();
+            announcer.textContent = '';
+            if (fromNavigation) title.focus();
+            openPlayers('start');
+          },
+          leave() {
+            if (dialog.open) dialog.close();
+            if (levelDialog.open) levelDialog.close();
+          },
+        });
+
+        option.addEventListener('click', () => navigate('never-have-i-ever'));
       })();
 
       /* ════════════════════════════════════════════════════════════════

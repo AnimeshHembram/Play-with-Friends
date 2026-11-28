@@ -1,0 +1,3943 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      Play with Friends — standalone UI playground.
+      One self-contained file: open it by double-clicking. No server, no build,
+      no network requests, no storage (settings last until the tab is closed or reloaded).
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fbfbfa" />
+    <title>Play with Friends — Playground</title>
+    <style>
+      /* ── Tokens ───────────────────────────────────────────────────
+         Colour defaults for first paint. The script below overwrites them
+         with a palette derived from the user's choices and checked for
+         WCAG 2.2 AA contrast. */
+      :root {
+        --color-bg: #fbfbfa;
+        --color-surface: #fdfdfd;
+        --color-text: #18181b;
+        --color-text-muted: #5f5f66;
+        --color-border: #8a8a8f;
+        --color-border-subtle: #e0e0e0;
+        --color-accent: #6b4eff;
+        --color-on-accent: #ffffff;
+        --color-accent-strong: #6b4eff;
+        --color-scrim: rgb(15 15 20 / 0.35);
+
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+
+        --radius-md: 0.75rem;
+        --radius-lg: 1.25rem;
+        --tap-min: 2.75rem; /* 44px minimum touch target */
+        --duration: 200ms;
+        --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-right: env(safe-area-inset-right, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-left: env(safe-area-inset-left, 0px);
+
+        font-family:
+          'Inter var',
+          Inter,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
+        line-height: 1.5;
+        color: var(--color-text);
+        background: var(--color-bg);
+        color-scheme: light dark;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --color-bg: #121214;
+          --color-surface: #1e1e20;
+          --color-text: #f4f4f5;
+          --color-text-muted: #a8a8ad;
+          --color-border: #6e6e73;
+          --color-border-subtle: #303033;
+          --color-accent-strong: #8a74ff;
+          --color-scrim: rgb(0 0 0 / 0.6);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        :root {
+          --duration: 0ms;
+        }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* ── Base ────────────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        overflow-x: clip; /* never scroll sideways */
+      }
+
+      body {
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: var(--color-bg);
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button,
+      input,
+      label {
+        font: inherit;
+        color: inherit;
+        touch-action: manipulation; /* taps respond immediately */
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 2px;
+      }
+
+      html:has(dialog[open]) {
+        overflow: hidden; /* page behind the menu doesn't scroll */
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* ── Canvas ──────────────────────────────────────────────────── */
+      .canvas {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh; /* follows the mobile address bar */
+        background: var(--color-bg);
+        color: var(--color-text);
+        transition:
+          background-color var(--duration) var(--ease),
+          color var(--duration) var(--ease);
+      }
+
+      /* The canvas centres its content in whatever space is left after the
+         menu button. If the content is taller than the screen, the page
+         scrolls vertically (auto margins never clip the top). */
+      .canvas main {
+        flex: 1 0 auto;
+        display: flex;
+        padding: calc(var(--tap-min) + var(--space-6) + var(--safe-top))
+          max(var(--space-4), var(--safe-right))
+          max(var(--space-6), calc(var(--safe-bottom) + var(--space-4)))
+          max(var(--space-4), var(--safe-left));
+      }
+
+      /* ── Game selection hero ─────────────────────────────────────
+         Just a heading and the seven buttons, directly on the page
+         background (no enclosing card). */
+      .game-hero {
+        margin: auto;
+        width: 100%;
+        max-width: 26rem;
+        color: var(--color-text);
+        text-align: center;
+      }
+
+      .game-hero h1 {
+        margin: 0 0 clamp(var(--space-6), 1rem + 2vw, 2.5rem);
+        font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        overflow-wrap: break-word;
+      }
+
+      .game-list {
+        display: grid;
+        /* Room for each button's 4px offset shadow and its bounce. */
+        gap: clamp(1rem, 0.85rem + 0.6vw, 1.25rem);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      /* ── Game buttons ────────────────────────────────────────────
+         Adapted from the reference "styled button": a light face, thick
+         dark outline, an inner bevel on the bottom-right edge, and a hard
+         offset shadow that makes it look raised. Hovering presses it down
+         halfway; pressing it sinks it fully (shadow gone) and fills it.
+         Colours come from the theme, so it works in light, dark and any
+         custom colours:
+           face   = panel colour        (reference #f0f0f0)
+           ink    = text colour         (reference #333) — outline, shadow, label
+           bevel  = face mixed with ink (reference #ccc)
+           press  = accent fill with readable text (reference inverts to black) */
+      .game-option {
+        --btn-face: var(--color-surface);
+        --btn-ink: var(--color-text);
+        --btn-bevel: color-mix(in srgb, var(--btn-face) 78%, var(--btn-ink));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 3.5rem;
+        padding: 0.8rem 1.5rem;
+        border: 3px solid var(--btn-ink);
+        border-radius: 10px;
+        background-color: var(--btn-face);
+        color: var(--btn-ink);
+        box-shadow:
+          inset -4px -4px 0 var(--btn-bevel),
+          4px 4px 0 var(--btn-ink);
+        font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+        font-weight: 650;
+        line-height: 1.25;
+        text-align: center;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        /* The bounce animates `transform`; hover/press use `translate`, so
+           the two combine instead of fighting. */
+        transition:
+          box-shadow 0.3s ease,
+          background-color 0.3s ease,
+          border-color 0.3s ease,
+          color 0.3s ease,
+          translate 0.3s ease;
+      }
+
+      /* Hover (real pointers only, so it never "sticks" after a tap). */
+      @media (hover: hover) {
+        .game-option:hover {
+          box-shadow:
+            inset -2px -2px 0 var(--btn-bevel),
+            2px 2px 0 var(--btn-ink);
+          translate: 2px 2px;
+        }
+      }
+
+      .game-option:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 5px;
+      }
+
+      /* Pressed: sinks into its shadow and fills with the accent colour.
+         Faster than the other transitions, so a tap feels immediate. */
+      .game-option:active {
+        background-color: var(--color-accent);
+        color: var(--color-on-accent);
+        border-color: var(--btn-ink);
+        box-shadow: none;
+        translate: 4px 4px;
+        transition-duration: 0.08s;
+      }
+
+      /* The reference's bounce, played as a staggered "hello" when the page
+         opens: two bounces each (4 s), then the buttons stay still. A
+         permanent bounce would make seven moving targets hard to tap and
+         breaks WCAG 2.2.2 (moving content must stop within 5 s). */
+      @media (prefers-reduced-motion: no-preference) {
+        .game-hero:not([data-settled]) .game-option {
+          animation: game-bounce 2s ease calc(var(--i, 0) * 90ms) 2 both;
+        }
+      }
+
+      .game-list li:nth-child(1) {
+        --i: 0;
+      }
+      .game-list li:nth-child(2) {
+        --i: 1;
+      }
+      .game-list li:nth-child(3) {
+        --i: 2;
+      }
+      .game-list li:nth-child(4) {
+        --i: 3;
+      }
+      .game-list li:nth-child(5) {
+        --i: 4;
+      }
+      .game-list li:nth-child(6) {
+        --i: 5;
+      }
+      .game-list li:nth-child(7) {
+        --i: 6;
+      }
+
+      @keyframes game-bounce {
+        0%,
+        20%,
+        50%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-10px);
+        }
+        60% {
+          transform: translateY(-5px);
+        }
+      }
+
+      /* Short landscape screens (phones on their side): two columns so all
+         seven games fit with little or no scrolling. The last one is centred. */
+      @media (orientation: landscape) and (max-height: 30rem) and (min-width: 36rem) {
+        .canvas main {
+          padding-top: max(var(--space-4), var(--safe-top));
+          padding-left: max(calc(var(--tap-min) + var(--space-6)), var(--safe-left));
+        }
+
+        .game-hero {
+          max-width: 40rem;
+        }
+
+        .game-hero h1 {
+          margin-bottom: var(--space-4);
+          font-size: 1.5rem;
+        }
+
+        .game-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: var(--space-3) var(--space-4);
+        }
+
+        .game-list li:last-child:nth-child(odd) {
+          grid-column: 1 / -1;
+          justify-self: center;
+          width: calc(50% - var(--space-4) / 2);
+        }
+
+        .game-option {
+          min-height: 3rem;
+          padding-block: 0.5rem;
+          font-size: 1.0625rem;
+        }
+      }
+
+      /* Windows High Contrast: keep the outline, drop the decorative shadows. */
+      @media (forced-colors: active) {
+        .game-option {
+          border: 3px solid ButtonText;
+          box-shadow: none;
+        }
+      }
+
+      /* ── Truth or Dare screen ────────────────────────────────────── */
+      .tod {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin: auto;
+        gap: clamp(var(--space-4), 2.5vh, var(--space-6));
+      }
+
+      /* Back: just the left arrow, beside the gear, same height and spacing.
+         Like the gear, it has no visible container: the button is an
+         invisible, square 44×44 px hit area, with the same focus ring. */
+      .back-button {
+        position: fixed;
+        top: max(var(--space-3), calc(var(--safe-top) + var(--space-2)));
+        left: max(
+          calc(var(--space-3) + var(--tap-min) + var(--space-2)),
+          calc(var(--safe-left) + var(--space-2) + var(--tap-min) + var(--space-2))
+        );
+        z-index: 10;
+        display: grid;
+        place-items: center;
+        width: var(--tap-min);
+        height: var(--tap-min);
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        color: var(--color-text);
+        cursor: pointer;
+        transition:
+          color var(--duration) var(--ease),
+          transform var(--duration) var(--ease);
+      }
+
+      /* Hover / keyboard focus: the arrow takes the accent colour and nudges
+         left, hinting where it goes. Only `transform` moves (GPU-friendly). */
+      .back-icon {
+        transition: transform 200ms var(--ease);
+      }
+
+      @media (hover: hover) {
+        .back-button:hover {
+          color: var(--color-accent-strong);
+        }
+
+        .back-button:hover .back-icon {
+          transform: translateX(-3px);
+        }
+      }
+
+      .back-button:focus-visible {
+        color: var(--color-accent-strong);
+      }
+
+      /* Keyboard focus ring for the gear and the arrow, drawn as an overlay
+         that ignores the pointer. (Rounding the button itself would make its
+         corners unclickable; an overlay keeps the full square hit area.) */
+      .settings-button:focus-visible,
+      .back-button:focus-visible {
+        outline: none;
+      }
+
+      .settings-button:focus-visible::after,
+      .back-button:focus-visible::after {
+        content: '';
+        position: absolute;
+        inset: -5px;
+        border: 3px solid var(--color-accent-strong);
+        border-radius: calc(var(--radius-md) + 5px);
+        pointer-events: none;
+      }
+
+      @media (forced-colors: active) {
+        .settings-button:focus-visible::after,
+        .back-button:focus-visible::after {
+          border-color: Highlight;
+        }
+      }
+
+      .back-button:focus-visible .back-icon {
+        transform: translateX(-3px);
+      }
+
+      .back-button:active {
+        transform: scale(0.92);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .back-button .back-icon,
+        .back-button:hover .back-icon,
+        .back-button:focus-visible .back-icon {
+          transform: none;
+          transition: none;
+        }
+      }
+
+      @media (min-width: 64rem) {
+        .back-button {
+          top: max(var(--space-4), calc(var(--safe-top) + var(--space-2)));
+          left: max(
+            calc(var(--space-4) + var(--tap-min) + var(--space-2)),
+            calc(var(--safe-left) + var(--space-2) + var(--tap-min) + var(--space-2))
+          );
+        }
+      }
+
+      .tod h1 {
+        margin: 0;
+        font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.875rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        text-align: center;
+      }
+
+      .flip-cards {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(var(--space-4), 2.5vh, var(--space-6));
+        width: 100%;
+      }
+
+      /* One flip card. Based on the reference: perspective on the card,
+         preserve-3d on the inner layer, two faces with hidden backs, and a
+         180° turn around the vertical axis. It's a real <button>, so it
+         works with touch, mouse and keyboard (Enter / Space). */
+      .flip-card {
+        /* Two cards stacked must fit the visible height on most screens. */
+        --card-h: clamp(9rem, calc((100dvh - 15rem) / 2), 17rem);
+        position: relative;
+        display: block;
+        width: min(100%, 26rem);
+        height: var(--card-h);
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-lg);
+        background: none;
+        color: inherit;
+        cursor: pointer;
+        perspective: 1000px;
+        -webkit-tap-highlight-color: transparent;
+        container-type: size;
+      }
+
+      .flip-card:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 4px;
+      }
+
+      .flip-inner {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+        transition: transform 600ms cubic-bezier(0.3, 0.7, 0.2, 1);
+      }
+
+      .flip-card[aria-pressed='true'] .flip-inner {
+        transform: rotateY(180deg);
+      }
+
+      @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+        .flip-card:hover .flip-inner {
+          translate: 0 -2px;
+        }
+      }
+
+      .flip-card:active .flip-inner {
+        scale: 0.985;
+      }
+
+      .face {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        padding: var(--space-4);
+        border: 1px solid transparent;
+        border-radius: var(--radius-lg);
+        text-align: center;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        transition:
+          background-color var(--duration) var(--ease),
+          color var(--duration) var(--ease),
+          border-color var(--duration) var(--ease);
+      }
+
+      .face-back {
+        transform: rotateY(180deg);
+      }
+
+      .face-word {
+        font-size: clamp(2rem, 22cqh, 3.75rem);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0.08em;
+      }
+
+      .face-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .face-text {
+        max-width: 18rem;
+        font-size: clamp(1rem, 0.9rem + 1cqh, 1.25rem);
+        font-weight: 550;
+        line-height: 1.35;
+      }
+
+      .face-hint {
+        font-size: 0.8125rem;
+        opacity: 0.85;
+      }
+
+      /* Truth: filled with the accent colour. */
+      .truth .face-front {
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+      }
+
+      /* Dare: the inverse of the page (dark card in light themes, light card
+         in dark themes) so it is clearly different from Truth with any accent. */
+      .dare .face-front {
+        background: var(--color-text);
+        color: var(--color-bg);
+      }
+
+      /* Backs: quiet surface with a coloured edge matching the front. */
+      .face-back {
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-width: 2px;
+      }
+
+      .truth .face-back {
+        border-color: var(--color-accent-strong);
+      }
+
+      .dare .face-back {
+        border-color: var(--color-text);
+      }
+
+      .face-back .face-label {
+        color: var(--color-text-muted);
+      }
+
+      /* Game screens always keep room above them for the fixed settings and
+         Back buttons (the landscape game-list layout trims it). */
+      .canvas main:has(.tod:not([hidden]), .dice-game:not([hidden])) {
+        padding-top: calc(var(--tap-min) + var(--space-5) + var(--safe-top));
+        padding-left: max(var(--space-4), var(--safe-left));
+      }
+
+      /* Short landscape screens: tighter spacing, smaller title, so both
+         stacked cards fit without scrolling where possible. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .tod {
+          gap: var(--space-3);
+        }
+
+        .tod h1 {
+          font-size: 1.125rem;
+        }
+
+        .flip-cards {
+          gap: var(--space-3);
+        }
+
+        .flip-card {
+          --card-h: max(7.5rem, calc((100dvh - 9.5rem) / 2));
+          width: min(100%, 30rem);
+        }
+
+        .face-hint {
+          display: none;
+        }
+      }
+
+      /* Reduced motion: the card changes face instantly instead of turning. */
+      @media (prefers-reduced-motion: reduce) {
+        .flip-inner {
+          transition: none;
+        }
+      }
+
+      @media (forced-colors: active) {
+        .face {
+          border: 2px solid CanvasText;
+        }
+      }
+
+      /* ── Settings button (gear) ───────────────────────────────────────────────── */
+      .settings-button {
+        position: fixed;
+        top: max(var(--space-3), calc(var(--safe-top) + var(--space-2)));
+        left: max(var(--space-3), calc(var(--safe-left) + var(--space-2)));
+        z-index: 10;
+        display: grid;
+        place-items: center;
+        width: var(--tap-min);
+        height: var(--tap-min);
+        /* No visible container: just the gear on the page. The button keeps
+           its full 44×44 px as an invisible, square hit area; the keyboard
+           focus ring is drawn separately (see below). */
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        color: var(--color-text);
+        cursor: pointer;
+        transition:
+          color var(--duration) var(--ease),
+          transform var(--duration) var(--ease);
+      }
+
+      /* Hover: the gear takes the accent colour (and turns, below). */
+      @media (hover: hover) {
+        .settings-button:hover {
+          color: var(--color-accent-strong);
+        }
+      }
+
+      .settings-button:focus-visible {
+        color: var(--color-accent-strong);
+      }
+
+      .settings-button:active {
+        transform: scale(0.92);
+      }
+
+      /* Gear: still when idle; turns 45° on hover or keyboard focus. Only the
+         compositor-friendly `transform` animates (no layout or paint work),
+         and will-change keeps it on its own GPU layer for smooth 60 fps. */
+      .settings-icon {
+        transition: transform 300ms var(--ease);
+        will-change: transform;
+      }
+
+      @media (hover: hover) {
+        .settings-button:hover .settings-icon {
+          transform: rotate(45deg);
+        }
+      }
+
+      .settings-button:focus-visible .settings-icon {
+        transform: rotate(45deg);
+      }
+
+      /* Reduced motion: no turning at all (not even an instant jump). */
+      @media (prefers-reduced-motion: reduce) {
+        .settings-button .settings-icon,
+        .settings-button:hover .settings-icon,
+        .settings-button:focus-visible .settings-icon {
+          transform: none;
+          transition: none;
+        }
+      }
+
+      @media (min-width: 64rem) {
+        .settings-button {
+          top: max(var(--space-4), calc(var(--safe-top) + var(--space-2)));
+          left: max(var(--space-4), calc(var(--safe-left) + var(--space-2)));
+        }
+      }
+
+      /* ── Panel: side drawer by default (tablets, landscape phones) ── */
+      .panel {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(22rem, calc(100vw - 3rem));
+        height: 100dvh;
+        max-width: none;
+        max-height: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-right: 1px solid var(--color-border-subtle);
+        background: var(--color-surface);
+        color: var(--color-text);
+        overflow: hidden;
+        overscroll-behavior: contain;
+      }
+
+      .panel::backdrop {
+        background: var(--color-scrim);
+      }
+
+      .panel-inner {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: inherit;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: max(var(--space-3), var(--safe-top)) var(--space-3) var(--space-2)
+          max(var(--space-5), var(--safe-left));
+      }
+
+      .panel-title {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .icon-button {
+        display: grid;
+        place-items: center;
+        width: var(--tap-min);
+        height: var(--tap-min);
+        padding: 0;
+        border: 0;
+        border-radius: var(--radius-md);
+        background: transparent;
+        color: var(--color-text-muted);
+        cursor: pointer;
+      }
+
+      .icon-button:hover {
+        background: var(--color-border-subtle);
+        color: var(--color-text);
+      }
+
+      .panel-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: var(--space-2) var(--space-5) max(var(--space-6), var(--safe-bottom))
+          max(var(--space-5), var(--safe-left));
+      }
+
+      /* Phones held upright: bottom sheet (easy thumb reach). */
+      @media (max-width: 39.99rem) and (min-height: 30rem) {
+        .panel {
+          inset: auto 0 0 0;
+          width: 100%;
+          height: auto;
+          max-height: 88dvh;
+          border-right: 0;
+          border-top: 1px solid var(--color-border-subtle);
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .panel-header {
+          padding-top: var(--space-4);
+          padding-left: var(--space-5);
+        }
+
+        .panel-body {
+          padding-left: var(--space-5);
+        }
+
+        .panel-inner::before {
+          content: '';
+          align-self: center;
+          width: 2.25rem;
+          height: 0.25rem;
+          margin-top: var(--space-2);
+          border-radius: 999px;
+          background: var(--color-border-subtle);
+        }
+      }
+
+      /* Large screens: compact floating panel under the settings button. */
+      @media (min-width: 64rem) and (min-height: 40rem) {
+        .panel {
+          inset: calc(var(--space-4) + var(--tap-min) + var(--space-2)) auto auto var(--space-4);
+          width: 22rem;
+          height: auto;
+          max-height: calc(100dvh - var(--tap-min) - 3 * var(--space-4));
+          border: 1px solid var(--color-border-subtle);
+          border-radius: var(--radius-lg);
+          box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.25);
+        }
+
+        .panel::backdrop {
+          background: transparent; /* canvas stays visible while you adjust it */
+        }
+
+        .panel-header {
+          padding: var(--space-3) var(--space-3) var(--space-1) var(--space-5);
+        }
+
+        .panel-body {
+          padding: var(--space-2) var(--space-5) var(--space-5);
+        }
+      }
+
+      /* Subtle entrance. */
+      @media (prefers-reduced-motion: no-preference) {
+        .panel[open] {
+          animation: slide-in-left 220ms var(--ease);
+        }
+        .panel[open]::backdrop {
+          animation: fade-in 220ms var(--ease);
+        }
+        @media (max-width: 39.99rem) and (min-height: 30rem) {
+          .panel[open] {
+            animation-name: slide-up;
+          }
+        }
+        @media (min-width: 64rem) and (min-height: 40rem) {
+          .panel[open] {
+            animation-name: drop-in;
+            animation-duration: 160ms;
+          }
+        }
+      }
+
+      @keyframes slide-in-left {
+        from {
+          transform: translateX(-100%);
+        }
+      }
+      @keyframes slide-up {
+        from {
+          transform: translateY(100%);
+        }
+      }
+      @keyframes drop-in {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+      }
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+        }
+      }
+
+      /* ── Appearance settings ─────────────────────────────────────── */
+      .section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+      }
+
+      .section-heading {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      legend {
+        margin-bottom: var(--space-2);
+        padding: 0;
+        font-weight: 600;
+      }
+
+      .hint {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+
+      .hint:empty {
+        /* Stays in the accessibility tree so new notes are announced, but takes no room. */
+        margin-top: calc(-1 * var(--space-5));
+      }
+
+      fieldset .hint:empty {
+        margin-top: calc(-1 * var(--space-2));
+      }
+
+      /* Theme mode: segmented control built from native radios. */
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-1);
+        padding: var(--space-1);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+      }
+
+      .segment {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: var(--tap-min);
+        border-radius: calc(var(--radius-md) - 4px);
+        color: var(--color-text-muted);
+        font-weight: 550;
+        cursor: pointer;
+        transition:
+          background-color var(--duration) var(--ease),
+          color var(--duration) var(--ease);
+      }
+
+      .segment input,
+      .swatch input[type='radio'] {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .segment:hover {
+        color: var(--color-text);
+      }
+
+      .segment:has(input:checked) {
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+      }
+
+      .segment:has(input:focus-visible),
+      .swatch:has(input:focus-visible) {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 2px;
+      }
+
+      /* Colour swatches. */
+      .swatches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+        margin-inline: calc(-1 * var(--space-1));
+      }
+
+      .swatch {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: var(--tap-min);
+        height: var(--tap-min);
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      .dot {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px var(--color-border); /* visible even if it matches the panel */
+      }
+
+      .swatch:has(input:checked)::after,
+      .swatch[data-selected]::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 2px solid var(--color-text);
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .picker {
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: conic-gradient(#ef4444, #f59e0b, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444);
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .picker::-webkit-color-swatch-wrapper {
+        padding: 3px;
+      }
+      .picker::-webkit-color-swatch {
+        border: 0;
+        border-radius: 50%;
+      }
+      .picker::-moz-color-swatch {
+        border: 0;
+        border-radius: 50%;
+      }
+
+      .picker:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 7px;
+      }
+
+      /* Preview. */
+      .preview {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+        background: var(--color-bg);
+      }
+
+      .preview > div {
+        flex: 1 1 10rem;
+        min-width: 0;
+      }
+
+      .preview-title {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .preview-text {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+      }
+
+      .preview-button {
+        flex-shrink: 0;
+        padding: var(--space-2) var(--space-4);
+        border-radius: 999px;
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      .reset {
+        align-self: flex-start;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-4);
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--color-text);
+        font-weight: 550;
+        cursor: pointer;
+      }
+
+      .reset:hover {
+        background: var(--color-border-subtle);
+      }
+
+      @media (forced-colors: active) {
+        .panel {
+          border: 1px solid CanvasText;
+        }
+      }
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: ROLLING DICE
+         Everything below belongs to Rolling Dice only.
+         ════════════════════════════════════════════════════════════════ */
+
+      /* ── Dice-count popup (frame shared with Random Picker's popup) ── */
+      .dice-picker,
+      .mode-picker {
+        width: min(26rem, calc(100vw - 2rem));
+        max-width: none;
+        max-height: calc(100dvh - 2rem);
+        margin: auto;
+        padding: 0;
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-lg);
+        background: var(--color-surface);
+        color: var(--color-text);
+        box-shadow: 0 24px 48px -16px rgb(0 0 0 / 0.35);
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+
+      .dice-picker::backdrop,
+      .mode-picker::backdrop {
+        background: var(--color-scrim);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .dice-picker[open],
+        .mode-picker[open] {
+          animation: picker-in 200ms var(--ease);
+        }
+        .dice-picker[open]::backdrop,
+        .mode-picker[open]::backdrop {
+          animation: fade-in 200ms var(--ease);
+        }
+      }
+
+      @keyframes picker-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.98);
+        }
+      }
+
+      .dice-picker form,
+      .mode-picker form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+        padding: var(--space-5) var(--space-5) var(--space-6);
+      }
+
+      .picker-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-2);
+      }
+
+      .picker-header .icon-button {
+        flex-shrink: 0; /* keep the full 44 × 44 px tap target next to a long heading */
+      }
+
+      .picker-header h2 {
+        margin: var(--space-2) 0 0;
+        font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem);
+        font-weight: 700;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+      }
+
+      .count-options {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-3);
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      .count-option {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        min-height: 6.5rem;
+        padding: var(--space-3) var(--space-2);
+        border: 2px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-weight: 650;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border-color var(--duration) var(--ease),
+          background-color var(--duration) var(--ease),
+          transform 120ms var(--ease);
+      }
+
+      .count-option input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      @media (hover: hover) {
+        .count-option:hover {
+          border-color: var(--color-border);
+        }
+      }
+
+      .count-option:active {
+        transform: scale(0.97);
+      }
+
+      /* Selected: thick accent outline, tinted fill and a check mark. */
+      .count-option:has(input:checked) {
+        border-color: var(--color-accent-strong);
+        border-width: 3px;
+        background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg));
+      }
+
+      .count-option:has(input:checked)::after {
+        content: '';
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 50%;
+        background: var(--color-accent-strong)
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E")
+          center / 70% no-repeat;
+      }
+
+      .count-option:has(input:focus-visible) {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      /* Small flat dice icons inside the options. */
+      .mini-dice {
+        display: flex;
+        gap: 4px;
+      }
+
+      .mini-die {
+        display: grid;
+        grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 3px;
+        border: 2px solid currentColor;
+        border-radius: 6px;
+      }
+
+      .mini-die i {
+        width: 4px;
+        height: 4px;
+        margin: auto;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .picker-hint {
+        margin: calc(-1 * var(--space-2)) 0 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        text-align: center;
+      }
+
+      .picker-actions {
+        display: flex;
+        flex-wrap: wrap-reverse;
+        gap: var(--space-3);
+      }
+
+      .picker-actions > * {
+        flex: 1 1 8rem;
+      }
+
+      .text-button {
+        min-height: var(--tap-min);
+        padding: 0 var(--space-5);
+        border: 2px solid var(--color-border);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--color-text);
+        font-weight: 650;
+        cursor: pointer;
+        transition: background-color var(--duration) var(--ease);
+      }
+
+      @media (hover: hover) {
+        .text-button:hover {
+          background: var(--color-border-subtle);
+        }
+      }
+
+      /* Primary action in the game's own visual language (like the game
+         buttons): ink outline, hard offset shadow, sinks when pressed. */
+      .action-button {
+        min-height: var(--tap-min);
+        padding: 0 var(--space-5);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-accent);
+        color: var(--color-on-accent);
+        box-shadow: 4px 4px 0 var(--color-text);
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          box-shadow 0.3s ease,
+          translate 0.3s ease,
+          opacity 0.2s ease;
+      }
+
+      @media (hover: hover) {
+        .action-button:hover:not(:disabled) {
+          box-shadow: 2px 2px 0 var(--color-text);
+          translate: 2px 2px;
+        }
+      }
+
+      .action-button:active:not(:disabled) {
+        box-shadow: none;
+        translate: 4px 4px;
+        transition-duration: 0.08s;
+      }
+
+      .action-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+        box-shadow: none;
+        translate: 4px 4px;
+      }
+
+      .action-button:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 4px;
+      }
+
+      /* ── Game screen ─────────────────────────────────────────────── */
+      .dice-game {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(var(--space-5), 3vh, var(--space-8));
+        width: 100%;
+        max-width: 40rem;
+        margin: auto;
+        text-align: center;
+      }
+
+      .dice-game h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+
+      /* Die size: bigger for one die, smaller for three, capped by both the
+         width and the height of the screen so they always fit side by side. */
+      .dice-tray {
+        --die: min(12rem, 38vw, 26dvh);
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: clamp(1.25rem, 5vw, 3rem);
+        width: 100%;
+        padding-block: calc(var(--die) * 0.35) calc(var(--die) * 0.25);
+        /* Gentle perspective: depth without dice looking huge mid-roll. */
+        perspective: 1600px;
+      }
+
+      .dice-tray[data-count='2'] {
+        --die: min(10rem, 32vw, 24dvh);
+      }
+
+      .dice-tray[data-count='3'] {
+        --die: min(8.5rem, calc((100vw - 4.5rem) / 3.7), 22dvh);
+      }
+
+      .die-slot {
+        position: relative;
+        width: var(--die);
+        height: var(--die);
+        flex-shrink: 0;
+      }
+
+      /* Soft shadow on the "table" under each die. */
+      .die-slot::after {
+        content: '';
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        bottom: calc(var(--die) * -0.18);
+        height: calc(var(--die) * 0.12);
+        border-radius: 50%;
+        background: radial-gradient(closest-side, rgb(0 0 0 / 0.28), transparent);
+        filter: blur(2px);
+        transition:
+          transform 0.3s ease,
+          opacity 0.3s ease;
+      }
+
+      .die-hop {
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+      }
+
+      /* The cube. Its rotation is set from JavaScript so the face that ends
+         up towards the viewer is always the rolled value. */
+      .die {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        transition: transform var(--roll-ms, 1100ms) cubic-bezier(0.18, 0.72, 0.24, 1);
+      }
+
+      .die-face {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+        padding: 14%;
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 18%;
+        background:
+          radial-gradient(
+            circle at 30% 25%,
+            color-mix(in srgb, var(--color-surface) 70%, #ffffff),
+            transparent 70%
+          ),
+          var(--color-surface);
+        box-shadow:
+          inset 0 0 0 1px color-mix(in srgb, var(--color-surface) 80%, #ffffff),
+          inset calc(var(--die) * -0.05) calc(var(--die) * -0.05) calc(var(--die) * 0.1)
+            color-mix(in srgb, var(--color-surface) 75%, #000000);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+
+      /* Standard die: opposite faces add up to seven. */
+      .die-face[data-value='1'] {
+        transform: rotateY(0deg) translateZ(calc(var(--die) / 2));
+      }
+      .die-face[data-value='6'] {
+        transform: rotateY(180deg) translateZ(calc(var(--die) / 2));
+      }
+      .die-face[data-value='3'] {
+        transform: rotateY(90deg) translateZ(calc(var(--die) / 2));
+      }
+      .die-face[data-value='4'] {
+        transform: rotateY(-90deg) translateZ(calc(var(--die) / 2));
+      }
+      .die-face[data-value='2'] {
+        transform: rotateX(90deg) translateZ(calc(var(--die) / 2));
+      }
+      .die-face[data-value='5'] {
+        transform: rotateX(-90deg) translateZ(calc(var(--die) / 2));
+      }
+
+      .pip {
+        width: 72%;
+        aspect-ratio: 1;
+        margin: auto;
+        border-radius: 50%;
+        background: var(--color-text);
+        box-shadow: inset 0 calc(var(--die) * 0.012) calc(var(--die) * 0.02) rgb(0 0 0 / 0.45);
+      }
+
+      /* While rolling, each die also hops off the table and lands. */
+      @media (prefers-reduced-motion: no-preference) {
+        .dice-tray[data-rolling] .die-hop {
+          animation: die-hop var(--roll-ms, 1100ms) cubic-bezier(0.3, 0.6, 0.3, 1);
+        }
+
+        .dice-tray[data-rolling] .die-slot::after {
+          animation: shadow-hop var(--roll-ms, 1100ms) cubic-bezier(0.3, 0.6, 0.3, 1);
+        }
+      }
+
+      @keyframes die-hop {
+        0% {
+          transform: translateY(0);
+        }
+        25% {
+          transform: translateY(calc(var(--die) * -0.3));
+        }
+        60% {
+          transform: translateY(0);
+        }
+        72% {
+          transform: translateY(calc(var(--die) * -0.08));
+        }
+        84%,
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes shadow-hop {
+        0%,
+        60%,
+        84%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        25% {
+          transform: scale(0.65);
+          opacity: 0.5;
+        }
+      }
+
+      /* ── Results ─────────────────────────────────────────────────── */
+      .dice-results {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: 5.5rem;
+      }
+
+      .dice-prompt {
+        margin: 0;
+        color: var(--color-text-muted);
+      }
+
+      .result-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-2);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .result-list li {
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 999px;
+        background: var(--color-surface);
+        font-weight: 550;
+      }
+
+      .result-list b {
+        font-weight: 800;
+      }
+
+      .dice-total {
+        margin: 0;
+        font-size: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .dice-total span {
+        color: var(--color-text-muted);
+        font-size: 0.55em;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-right: var(--space-2);
+      }
+
+      .roll-button {
+        min-width: min(16rem, 100%);
+        min-height: 3.5rem;
+        font-size: 1.25rem;
+      }
+
+      /* Short landscape screens: tighter spacing so everything fits. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .dice-game {
+          gap: var(--space-3);
+        }
+
+        .dice-game h1 {
+          font-size: 1.25rem;
+        }
+
+        .dice-tray,
+        .dice-tray[data-count='2'],
+        .dice-tray[data-count='3'] {
+          --die: min(5.5rem, 20dvh);
+          padding-block: var(--space-4) var(--space-4);
+        }
+
+        .dice-results {
+          min-height: 0;
+        }
+
+        .roll-button {
+          min-height: var(--tap-min);
+          font-size: 1.0625rem;
+        }
+      }
+
+      @media (forced-colors: active) {
+        .die-face,
+        .count-option {
+          border: 2px solid CanvasText;
+        }
+        .pip {
+          background: CanvasText;
+        }
+      }
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: RANDOM PICKER
+         The popup reuses the dice popup's frame and option tiles above.
+         ════════════════════════════════════════════════════════════════ */
+      .mode-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4);
+        padding: 0 4px 4px 0; /* room for the hard shadows */
+      }
+
+      /* Same look as the main game buttons: thick outline, inner bevel,
+         hard offset shadow; hover presses halfway, a tap sinks it fully. */
+      .mode-picker {
+        border: 3px solid var(--color-text);
+        box-shadow: 6px 6px 0 var(--color-text);
+      }
+
+      .mode-options .count-option,
+      .mode-picker .text-button,
+      .wheel-actions .text-button {
+        --btn-face: var(--color-surface);
+        --btn-ink: var(--color-text);
+        --btn-bevel: color-mix(in srgb, var(--btn-face) 78%, var(--btn-ink));
+        border: 3px solid var(--btn-ink);
+        border-radius: 10px;
+        background-color: var(--btn-face);
+        color: var(--btn-ink);
+        box-shadow:
+          inset -4px -4px 0 var(--btn-bevel),
+          4px 4px 0 var(--btn-ink);
+        transition:
+          box-shadow 0.3s ease,
+          background-color 0.3s ease,
+          color 0.3s ease,
+          translate 0.3s ease;
+      }
+
+      @media (hover: hover) {
+        .mode-options .count-option:hover,
+        .mode-picker .text-button:hover,
+        .wheel-actions .text-button:hover {
+          border-color: var(--btn-ink);
+          background-color: var(--btn-face);
+          box-shadow:
+            inset -2px -2px 0 var(--btn-bevel),
+            2px 2px 0 var(--btn-ink);
+          translate: 2px 2px;
+        }
+      }
+
+      .mode-options .count-option:active,
+      .mode-picker .text-button:active,
+      .wheel-actions .text-button:active {
+        transform: none;
+        box-shadow: none;
+        translate: 4px 4px;
+        transition-duration: 0.08s;
+      }
+
+      /* Selected: filled with the accent and held halfway down. */
+      .mode-options .count-option:has(input:checked),
+      .mode-options .count-option:has(input:checked):hover {
+        border-width: 3px;
+        border-color: var(--btn-ink);
+        background-color: var(--color-accent);
+        color: var(--color-on-accent);
+        box-shadow: 2px 2px 0 var(--btn-ink);
+        translate: 2px 2px;
+      }
+
+      .mode-options .count-option:has(input:checked)::after {
+        box-shadow: 0 0 0 2px var(--color-on-accent);
+      }
+
+      .mode-options .count-option:has(input:focus-visible) {
+        outline-offset: 5px;
+      }
+
+      /* Random Number: range popup. Always two tiles side by side. */
+      .mode-options.range-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .range-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+      }
+
+      .range-field label {
+        font-weight: 650;
+      }
+
+      .range-input-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        font-size: 1.125rem;
+        font-weight: 700;
+      }
+
+      .range-input-row input {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-3);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+      }
+
+      .range-input-row input:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      .range-input-row input[aria-invalid='true'] {
+        border-style: dashed;
+      }
+
+      @media (forced-colors: active) {
+        .mode-picker,
+        .mode-options .count-option,
+        .mode-picker .text-button,
+        .wheel-actions .text-button {
+          box-shadow: none;
+        }
+      }
+
+      .mode-icon {
+        display: grid;
+        place-items: center;
+        height: 2rem;
+        font-size: 1.25rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        line-height: 1;
+      }
+
+      .mode-icon svg {
+        width: 2rem;
+        height: 2rem;
+      }
+
+      /* Mode screen: an empty frame for now, filled in mode by mode. */
+      .rp-game {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(var(--space-4), 3vh, var(--space-6));
+        width: 100%;
+        max-width: 40rem;
+        margin: auto;
+        text-align: center;
+      }
+
+      .rp-eyebrow {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .rp-game h1 {
+        margin: calc(-1 * var(--space-3)) 0 0;
+        font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+
+      .rp-stage {
+        display: grid;
+        place-items: center;
+        width: min(100%, 26rem);
+        min-height: clamp(12rem, 40dvh, 20rem);
+        padding: var(--space-6);
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-lg);
+        color: var(--color-text-muted);
+      }
+
+      .rp-stage p {
+        margin: 0;
+      }
+
+      /* ── Spinning Wheel: the wheel ─────────────────────────────────── */
+      .wheel {
+        position: relative;
+        width: min(100%, 26rem, calc(100dvh - 22rem));
+        min-width: 10rem;
+        aspect-ratio: 1;
+        margin-top: var(--space-3); /* room for the pointer */
+        border: 4px solid var(--color-text);
+        border-radius: 50%;
+        background: var(--color-text);
+        box-shadow: 6px 6px 0 var(--color-text);
+      }
+
+      .wheel-dial {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        border-radius: 50%;
+      }
+
+      /* The drawing turns inside the round, clipped dial. */
+      .wheel-dial svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        will-change: transform;
+      }
+
+      .wheel-dial text {
+        font-family: inherit;
+        font-weight: 700;
+      }
+
+      /* Fixed pointer at the top, pointing down into the wheel. */
+      .wheel-pointer {
+        position: absolute;
+        top: -1.25rem;
+        left: 50%;
+        width: 1.875rem;
+        height: 2.25rem;
+        translate: -50% 0;
+        filter: drop-shadow(3px 3px 0 var(--color-text));
+      }
+
+      .wheel-hub {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        display: grid;
+        place-items: center;
+        width: 22%;
+        aspect-ratio: 1;
+        translate: -50% -50%;
+        border: 4px solid var(--color-text);
+        border-radius: 50%;
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-size: clamp(0.75rem, 3.2vmin, 1.125rem);
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+
+      .wheel-result {
+        margin: 0;
+        max-width: 100%;
+        font-size: clamp(1.25rem, 1rem + 1.5vw, 1.75rem);
+        font-weight: 800;
+        overflow-wrap: anywhere;
+      }
+
+      .wheel-result-label {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .wheel-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-4);
+        padding: 0 4px 4px 0; /* room for the hard shadows */
+      }
+
+      .wheel-actions .roll-button {
+        min-width: 10rem;
+      }
+
+      .wheel-actions [aria-disabled='true'] {
+        cursor: progress;
+      }
+
+      /* Spinning Wheel: options popup */
+      .wheel-setup-intro {
+        margin: calc(-1 * var(--space-2)) 0 0;
+        color: var(--color-text-muted);
+      }
+
+      .wheel-add {
+        display: flex;
+        gap: var(--space-3);
+        padding: 0 4px 4px 0;
+      }
+
+      .wheel-add input {
+        flex: 1;
+        min-width: 0;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-3);
+        border: 3px solid var(--color-text);
+        border-radius: 10px;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font: inherit;
+      }
+
+      .wheel-add input:focus-visible {
+        outline: 3px solid var(--color-accent-strong);
+        outline-offset: 3px;
+      }
+
+      .wheel-add input:disabled {
+        border-style: dashed;
+        opacity: 0.6;
+      }
+
+      .wheel-count {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.875rem;
+        font-weight: 650;
+      }
+
+      .wheel-list {
+        display: flex;
+        flex-direction: column;
+        max-height: min(15rem, 32dvh);
+        margin: calc(-1 * var(--space-2)) 0 0;
+        padding: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border: 2px solid var(--color-border);
+        border-radius: 10px;
+        list-style: none;
+        counter-reset: wheel-item;
+      }
+
+      .wheel-list:empty {
+        display: none;
+      }
+
+      .wheel-list li {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        min-height: var(--tap-min);
+        padding-left: var(--space-3);
+        border-bottom: 1px solid var(--color-border-subtle);
+        counter-increment: wheel-item;
+      }
+
+      .wheel-list li:last-child {
+        border-bottom: 0;
+      }
+
+      .wheel-list li::before {
+        content: counter(wheel-item);
+        min-width: 1.5rem;
+        color: var(--color-text-muted);
+        font-size: 0.8125rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .wheel-swatch {
+        flex: none;
+        width: 0.875rem;
+        height: 0.875rem;
+        border: 2px solid var(--color-text);
+        border-radius: 50%;
+      }
+
+      .wheel-item-text {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .wheel-result:not([hidden]) {
+          animation: rp-land 280ms var(--ease);
+        }
+      }
+
+      @media (forced-colors: active) {
+        .wheel,
+        .wheel-actions .text-button {
+          box-shadow: none;
+        }
+        .wheel-pointer {
+          filter: none;
+        }
+      }
+
+      /* Short landscape phones: wheel on the left, everything else beside it. */
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .rp-game[data-mode='wheel'] {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          column-gap: var(--space-6);
+          row-gap: var(--space-2);
+          align-items: center;
+          max-width: 48rem;
+        }
+        .rp-game[data-mode='wheel'] .wheel {
+          grid-row: 1 / span 5;
+          width: min(calc(100dvh - 7rem), 45vw);
+          min-width: 9rem;
+        }
+        .rp-game[data-mode='wheel'] > :not(.wheel) {
+          grid-column: 2;
+        }
+        .wheel-list {
+          max-height: 6rem;
+        }
+      }
+
+      /* Random Number: the picked number, sized to fit any length. */
+      .rp-stage:has(.rp-result:not([hidden])) {
+        container-type: inline-size;
+        border: 3px solid var(--color-text);
+        background: var(--color-surface);
+        box-shadow: 4px 4px 0 var(--color-text);
+        color: var(--color-text);
+      }
+
+      .rp-result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+      }
+
+      .rp-number {
+        --len: 2; /* characters shown; set by the script */
+        font-size: min(7rem, 22dvh, calc(140cqi / var(--len)));
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .rp-stage[data-rolling] .rp-number {
+        color: var(--color-text-muted);
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .rp-stage[data-landed] .rp-number {
+          animation: rp-land 280ms var(--ease);
+        }
+      }
+
+      @keyframes rp-land {
+        from {
+          transform: scale(1.18);
+        }
+      }
+
+      .rp-range {
+        color: var(--color-text-muted);
+        font-size: 0.9375rem;
+        font-weight: 650;
+      }
+
+      .rp-game .roll-button[aria-disabled='true'] {
+        cursor: progress;
+      }
+
+      @media (orientation: landscape) and (max-height: 30rem) {
+        .rp-game {
+          gap: var(--space-3);
+        }
+        .rp-game h1 {
+          font-size: 1.25rem;
+        }
+        .rp-stage {
+          min-height: 6.5rem;
+          padding: var(--space-3) var(--space-5);
+        }
+        .mode-picker form {
+          gap: var(--space-4);
+          padding-block: var(--space-4);
+        }
+        /* Compact popup: all four tiles in one row, so the popup fits. */
+        .mode-options {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: var(--space-3);
+        }
+        .mode-options.range-options {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #range-picker form {
+          gap: var(--space-3);
+          padding-block: var(--space-3);
+        }
+        .range-options .count-option {
+          min-height: var(--tap-min);
+          font-size: 1rem;
+        }
+        /* Short screens: the tile labels say it all; drop the big icons
+           and the visible field label (it stays for screen readers). */
+        .range-options .mode-icon {
+          display: none;
+        }
+        .range-field label {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+        /* Narrow tiles: the accent fill alone marks the choice. */
+        .mode-options .count-option:has(input:checked)::after {
+          display: none;
+        }
+        .mode-options .count-option {
+          min-height: 5.25rem;
+          gap: var(--space-1);
+          padding-inline: var(--space-1);
+          font-size: 0.875rem;
+          line-height: 1.2;
+        }
+        .mode-icon,
+        .mode-icon svg {
+          height: 1.5rem;
+          font-size: 1rem;
+        }
+        .mode-icon svg {
+          width: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <button
+        type="button"
+        class="settings-button"
+        id="menu-button"
+        aria-label="Settings"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="menu"
+      >
+        <svg
+          class="settings-icon"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M10.09 2.18 13.91 2.18 14.13 5.02 15.43 5.55 17.59 3.71 20.29 6.41 18.45 8.57 18.98 9.87 21.82 10.09 21.82 13.91 18.98 14.13 18.45 15.43 20.29 17.59 17.59 20.29 15.43 18.45 14.13 18.98 13.91 21.82 10.09 21.82 9.87 18.98 8.57 18.45 6.41 20.29 3.71 17.59 5.55 15.43 5.02 14.13 2.18 13.91 2.18 10.09 5.02 9.87 5.55 8.57 3.71 6.41 6.41 3.71 8.57 5.55 9.87 5.02Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+          <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" />
+        </svg>
+      </button>
+
+      <main>
+        <!-- Shared: shown on every game screen, returns to game selection. -->
+        <button
+          type="button"
+          class="back-button"
+          id="back-button"
+          hidden
+          aria-label="Back to games"
+        >
+          <svg
+            class="back-icon"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M19 12H5m0 0 6-6m-6 6 6 6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        <section class="game-hero" aria-labelledby="game-hero-title">
+          <h1 id="game-hero-title">Choose Your Game</h1>
+          <!-- Visual selection controls for this stage: no gameplay or navigation yet. -->
+          <ul class="game-list" aria-label="Games">
+            <li>
+              <button type="button" class="game-option" data-game="truth-or-dare">
+                Truth or Dare
+              </button>
+            </li>
+            <li><button type="button" class="game-option">Never Have I Ever</button></li>
+            <li><button type="button" class="game-option">Who's Most Likely To?</button></li>
+            <li>
+              <button
+                type="button"
+                class="game-option"
+                data-game="random-picker"
+                aria-haspopup="dialog"
+              >
+                Random Picker
+              </button>
+            </li>
+            <li><button type="button" class="game-option">Dumb Charades</button></li>
+            <li>
+              <button
+                type="button"
+                class="game-option"
+                data-game="rolling-dice"
+                aria-haspopup="dialog"
+              >
+                Rolling Dice
+              </button>
+            </li>
+            <li><button type="button" class="game-option">Pick a Card</button></li>
+          </ul>
+        </section>
+
+        <!-- Truth or Dare screen (UI prototype: no questions or game logic yet). -->
+        <section class="tod" id="truth-or-dare" aria-labelledby="tod-title" hidden>
+          <h1 id="tod-title" tabindex="-1">Truth or Dare</h1>
+
+          <div class="flip-cards">
+            <button
+              type="button"
+              class="flip-card truth"
+              aria-pressed="false"
+              aria-label="Truth card"
+              data-card="truth"
+            >
+              <span class="flip-inner">
+                <span class="face face-front">
+                  <span class="face-word">TRUTH</span>
+                  <span class="face-hint">Tap to flip</span>
+                </span>
+                <span class="face face-back" aria-hidden="true">
+                  <span class="face-label">Truth</span>
+                  <span class="face-text">Your truth question will appear here.</span>
+                </span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              class="flip-card dare"
+              aria-pressed="false"
+              aria-label="Dare card"
+              data-card="dare"
+            >
+              <span class="flip-inner">
+                <span class="face face-front">
+                  <span class="face-word">DARE</span>
+                  <span class="face-hint">Tap to flip</span>
+                </span>
+                <span class="face face-back" aria-hidden="true">
+                  <span class="face-label">Dare</span>
+                  <span class="face-text">Your dare will appear here.</span>
+                </span>
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Rolling Dice: game screen. -->
+        <section class="dice-game" id="rolling-dice" aria-labelledby="dice-title" hidden>
+          <h1 id="dice-title" tabindex="-1">Rolling Dice</h1>
+          <div class="dice-tray" id="dice-tray" data-count="1" role="img" aria-label="Dice"></div>
+          <div class="dice-results" id="dice-results">
+            <p class="dice-prompt">Tap Roll to throw the dice.</p>
+          </div>
+          <p class="visually-hidden" id="dice-announcer" role="status" aria-live="polite"></p>
+          <button type="button" class="action-button roll-button" id="roll-button">Roll</button>
+        </section>
+
+        <!-- Random Picker: one screen per mode (empty for now). -->
+        <section class="rp-game" id="random-picker" aria-labelledby="rp-title" hidden>
+          <p class="rp-eyebrow">Random Picker</p>
+          <h1 id="rp-title" tabindex="-1">Card</h1>
+          <div class="rp-stage" id="rp-stage">
+            <p id="rp-placeholder">Your card picker will appear here.</p>
+            <div class="rp-result" id="rp-result" hidden>
+              <span class="rp-number" id="rp-number" aria-hidden="true"></span>
+              <span class="rp-range" id="rp-range"></span>
+            </div>
+          </div>
+          <!-- Spinning Wheel -->
+          <div class="wheel" id="wheel" hidden>
+            <div class="wheel-dial" id="wheel-dial">
+              <svg id="wheel-svg" viewBox="-100 -100 200 200" role="img" aria-label="Wheel"></svg>
+            </div>
+            <svg class="wheel-pointer" viewBox="0 0 36 44" aria-hidden="true" focusable="false">
+              <path
+                d="M4 3h28L18 41z"
+                fill="var(--color-accent)"
+                stroke="var(--color-text)"
+                stroke-width="4"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div class="wheel-hub" aria-hidden="true">SPIN</div>
+          </div>
+          <p class="wheel-result" id="wheel-result" hidden>
+            <span class="wheel-result-label">Result</span>
+            <span id="wheel-result-text"></span>
+          </p>
+          <p class="visually-hidden" id="rp-announcer" role="status" aria-live="polite"></p>
+          <button type="button" class="action-button roll-button" id="rp-press" hidden>
+            Pick again
+          </button>
+          <div class="wheel-actions" id="wheel-actions" hidden>
+            <button type="button" class="text-button" id="wheel-edit">Edit options</button>
+            <button type="button" class="action-button roll-button" id="wheel-spin">
+              Spin again
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Rolling Dice: how many dice? -->
+    <dialog class="dice-picker" id="dice-picker" aria-labelledby="dice-picker-title">
+      <form method="dialog" id="dice-picker-form">
+        <div class="picker-header">
+          <h2 id="dice-picker-title">How many dice do you want?</h2>
+          <button type="button" class="icon-button" id="dice-picker-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="count-options">
+          <legend class="visually-hidden">Number of dice</legend>
+          <label class="count-option">
+            <input type="radio" name="dice-count" value="1" />
+            <span class="mini-dice" aria-hidden="true"
+              ><span class="mini-die"><i style="grid-area: 2 / 2"></i></span
+            ></span>
+            <span>1 Dice</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="dice-count" value="2" />
+            <span class="mini-dice" aria-hidden="true"
+              ><span class="mini-die"><i style="grid-area: 2 / 2"></i></span
+              ><span class="mini-die"><i style="grid-area: 2 / 2"></i></span
+            ></span>
+            <span>2 Dice</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="dice-count" value="3" />
+            <span class="mini-dice" aria-hidden="true"
+              ><span class="mini-die"><i style="grid-area: 2 / 2"></i></span
+              ><span class="mini-die"><i style="grid-area: 2 / 2"></i></span
+              ><span class="mini-die"><i style="grid-area: 2 / 2"></i></span
+            ></span>
+            <span>3 Dice</span>
+          </label>
+        </fieldset>
+
+        <p class="picker-hint" id="dice-picker-hint">Choose 1, 2 or 3 to continue.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="dice-picker-cancel">Cancel</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="dice-picker-continue"
+            disabled
+            aria-describedby="dice-picker-hint"
+          >
+            Continue
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Random Picker: which picker? -->
+    <dialog class="mode-picker" id="mode-picker" aria-labelledby="mode-picker-title">
+      <form method="dialog" id="mode-picker-form">
+        <div class="picker-header">
+          <h2 id="mode-picker-title">Choose a picker</h2>
+          <button type="button" class="icon-button" id="mode-picker-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="count-options mode-options">
+          <legend class="visually-hidden">Picker type</legend>
+          <label class="count-option">
+            <input type="radio" name="picker-mode" value="card" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <rect x="10" y="4" width="16" height="22" rx="3" />
+                <path d="M7 8.5v16.5a3 3 0 0 0 3 3h12" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span>Card</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="picker-mode" value="wheel" />
+            <span class="mode-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.25">
+                <circle cx="16" cy="17" r="12" />
+                <path d="M16 5v24M4 17h24M7.5 8.5l17 17M24.5 8.5l-17 17" stroke-width="1.5" />
+                <path d="M12.5 1.5h7L16 6z" fill="currentColor" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span>Spinning Wheel</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="picker-mode" value="number" />
+            <span class="mode-icon" aria-hidden="true">123</span>
+            <span>Random Number</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="picker-mode" value="alphabet" />
+            <span class="mode-icon" aria-hidden="true">ABC</span>
+            <span>Random Alphabet</span>
+          </label>
+        </fieldset>
+
+        <p class="picker-hint" id="mode-picker-hint">Choose one to continue.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="mode-picker-cancel">Cancel</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="mode-picker-continue"
+            disabled
+            aria-describedby="mode-picker-hint"
+          >
+            Continue
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Random Number: which range? -->
+    <dialog class="mode-picker" id="range-picker" aria-labelledby="range-picker-title">
+      <form method="dialog" id="range-picker-form" novalidate>
+        <div class="picker-header">
+          <h2 id="range-picker-title">Choose a range</h2>
+          <button type="button" class="icon-button" id="range-picker-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="count-options mode-options range-options">
+          <legend class="visually-hidden">Number range</legend>
+          <label class="count-option">
+            <input type="radio" name="number-range" value="ten" />
+            <span class="mode-icon" aria-hidden="true">1–10</span>
+            <span>1 to 10</span>
+          </label>
+          <label class="count-option">
+            <input type="radio" name="number-range" value="custom" />
+            <span class="mode-icon" aria-hidden="true">1–X</span>
+            <span>1 to X</span>
+          </label>
+        </fieldset>
+
+        <div class="range-field" id="range-field" hidden>
+          <label for="range-max">Pick a number from 1 to…</label>
+          <div class="range-input-row">
+            <span aria-hidden="true">1 to</span>
+            <input
+              type="text"
+              id="range-max"
+              inputmode="numeric"
+              autocomplete="off"
+              enterkeyhint="go"
+              maxlength="9"
+              placeholder="e.g. 50"
+              aria-describedby="range-picker-hint"
+            />
+          </div>
+        </div>
+
+        <p class="picker-hint" id="range-picker-hint">Choose a range, then tap PRESS.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="range-picker-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="range-picker-continue"
+            disabled
+            aria-describedby="range-picker-hint"
+          >
+            PRESS
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Spinning Wheel: the options to put on the wheel -->
+    <dialog
+      class="mode-picker"
+      id="wheel-setup"
+      aria-labelledby="wheel-setup-title"
+      aria-describedby="wheel-setup-intro"
+    >
+      <form method="dialog" id="wheel-setup-form" novalidate>
+        <div class="picker-header">
+          <h2 id="wheel-setup-title">Add wheel options</h2>
+          <button type="button" class="icon-button" id="wheel-setup-close" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <p class="wheel-setup-intro" id="wheel-setup-intro">
+          Add 2 to 50 options, then tap PRESS to spin.
+        </p>
+
+        <div class="wheel-add">
+          <label for="wheel-input" class="visually-hidden">New option</label>
+          <input
+            type="text"
+            id="wheel-input"
+            maxlength="40"
+            autocomplete="off"
+            enterkeyhint="enter"
+            placeholder="Type an option, e.g. Pizza"
+          />
+          <button type="button" class="text-button" id="wheel-add">Add</button>
+        </div>
+
+        <p class="wheel-count" id="wheel-count" aria-live="polite">0 / 50 options</p>
+        <ol class="wheel-list" id="wheel-list" aria-label="Wheel options"></ol>
+
+        <p class="picker-hint" id="wheel-hint">Add at least 2 options.</p>
+
+        <div class="picker-actions">
+          <button type="button" class="text-button" id="wheel-setup-back">Back</button>
+          <button
+            type="submit"
+            class="action-button"
+            id="wheel-setup-press"
+            disabled
+            aria-describedby="wheel-hint"
+          >
+            PRESS
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="panel" id="menu" aria-labelledby="menu-title">
+      <div class="panel-inner">
+        <header class="panel-header">
+          <h2 class="panel-title" id="menu-title">Menu</h2>
+          <button type="button" class="icon-button" id="close-button" aria-label="Close menu">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </header>
+
+        <div class="panel-body">
+          <section class="section" aria-labelledby="appearance-title">
+            <h3 class="section-heading" id="appearance-title">Appearance</h3>
+
+            <fieldset>
+              <legend>Theme</legend>
+              <div class="segmented" id="mode-group"></div>
+              <p class="hint" id="mode-hint"></p>
+            </fieldset>
+
+            <fieldset>
+              <legend>Background</legend>
+              <div class="swatches" id="background-group"></div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Accent</legend>
+              <div class="swatches" id="accent-group"></div>
+            </fieldset>
+
+            <div class="preview" role="group" aria-label="Preview">
+              <div>
+                <p class="preview-title">Preview</p>
+                <p class="preview-text">Text stays readable on every colour.</p>
+              </div>
+              <span class="preview-button">Accent</span>
+            </div>
+
+            <p class="hint" id="accent-note" aria-live="polite"></p>
+
+            <button type="button" class="reset" id="reset-button">Reset to default</button>
+          </section>
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      'use strict';
+
+      /* ── Colour toolkit ────────────────────────────────────────────
+         Users can pick any colour, so every other colour (text, borders,
+         focus ring, text on the accent) is derived from the two picks and
+         checked against WCAG 2.2 AA. Anything that would be hard to read is
+         nudged until it passes. */
+      const MIN_TEXT = 4.5;
+      const MIN_UI = 3;
+
+      const normalizeHex = (value) => {
+        const hex = String(value).trim().replace('#', '').toLowerCase();
+        if (!/^([0-9a-f]{3}|[0-9a-f]{6})$/.test(hex)) throw new Error('Not a hex colour: ' + value);
+        return '#' + (hex.length === 3 ? [...hex].map((c) => c + c).join('') : hex);
+      };
+      const toRgb = (hex) => {
+        const h = normalizeHex(hex).slice(1);
+        return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+      };
+      const toHex = (rgb) =>
+        '#' +
+        rgb
+          .map((v) =>
+            Math.round(Math.min(255, Math.max(0, v)))
+              .toString(16)
+              .padStart(2, '0'),
+          )
+          .join('');
+      const luminance = (hex) => {
+        const [r, g, b] = toRgb(hex).map((v) => {
+          const c = v / 255;
+          return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const contrast = (a, b) => {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      const mix = (from, to, amount) => {
+        const a = toRgb(from);
+        const b = toRgb(to);
+        return toHex(a.map((v, i) => v + (b[i] - v) * amount));
+      };
+      const ensureContrast = (colour, against, min, toward) => {
+        for (let step = 0; step <= 20; step += 1) {
+          const candidate = mix(colour, toward, step / 20);
+          if (against.every((bg) => contrast(candidate, bg) >= min)) return candidate;
+        }
+        return normalizeHex(toward);
+      };
+      const readableOn = (bg) =>
+        contrast(bg, '#ffffff') >= contrast(bg, '#000000') ? '#ffffff' : '#000000';
+
+      function derivePalette(backgroundInput, accentInput) {
+        const background = normalizeHex(backgroundInput);
+        const accent = normalizeHex(accentInput);
+        const scheme =
+          contrast(background, '#ffffff') > contrast(background, '#000000') ? 'dark' : 'light';
+        const softText = scheme === 'dark' ? '#f4f4f5' : '#18181b';
+        const pureText = scheme === 'dark' ? '#ffffff' : '#000000';
+        // Panels sit a touch lighter than the canvas; on mid-tones they match it.
+        const lifted = mix(background, '#ffffff', scheme === 'dark' ? 0.06 : 0.6);
+        const text = [background, lifted].every((bg) => contrast(softText, bg) >= 7)
+          ? softText
+          : pureText;
+        const surface = contrast(text, lifted) >= MIN_TEXT ? lifted : background;
+        const surfaces = [background, surface];
+        const accentStrong = ensureContrast(accent, surfaces, MIN_UI, text);
+        return {
+          scheme,
+          background,
+          surface,
+          text,
+          textMuted: ensureContrast(mix(text, background, 0.35), surfaces, MIN_TEXT, text),
+          border: ensureContrast(mix(background, text, 0.32), surfaces, MIN_UI, text),
+          borderSubtle: mix(background, text, 0.12),
+          accent,
+          onAccent: readableOn(accent),
+          accentStrong,
+          scrim: scheme === 'dark' ? 'rgb(0 0 0 / 0.6)' : 'rgb(15 15 20 / 0.35)',
+          accentAdjusted: accentStrong !== accent,
+        };
+      }
+
+      /* ── Options ─────────────────────────────────────────────────── */
+      const MODES = [
+        { id: 'system', label: 'System' },
+        { id: 'light', label: 'Light' },
+        { id: 'dark', label: 'Dark' },
+      ];
+      const BACKGROUNDS = [
+        { id: 'default', label: 'Default', light: '#fbfbfa', dark: '#121214' },
+        { id: 'stone', label: 'Stone', light: '#f3f1ec', dark: '#1c1b19' },
+        { id: 'sage', label: 'Sage', light: '#edf3ee', dark: '#111a15' },
+        { id: 'ocean', label: 'Ocean', light: '#ecf2f9', dark: '#0e1621' },
+        { id: 'rose', label: 'Rose', light: '#f9eef1', dark: '#1d1216' },
+        { id: 'lavender', label: 'Lavender', light: '#f1effa', dark: '#15131f' },
+      ];
+      const ACCENTS = [
+        { id: 'violet', label: 'Violet', value: '#6b4eff' },
+        { id: 'blue', label: 'Blue', value: '#2563eb' },
+        { id: 'teal', label: 'Teal', value: '#0d9488' },
+        { id: 'green', label: 'Green', value: '#16a34a' },
+        { id: 'amber', label: 'Amber', value: '#f59e0b' },
+        { id: 'pink', label: 'Pink', value: '#db2777' },
+      ];
+      const DEFAULTS = {
+        mode: 'system',
+        background: { preset: 'default' },
+        accent: { preset: 'violet' },
+      };
+
+      /* ── State (in memory only: no localStorage, no cookies) ─────── */
+      let settings = structuredClone(DEFAULTS);
+      let palette = null;
+      const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      const isDark = () =>
+        settings.mode === 'system' ? darkQuery.matches : settings.mode === 'dark';
+      const resolveBackground = () => {
+        if (settings.background.custom) return settings.background.custom;
+        const preset =
+          BACKGROUNDS.find((p) => p.id === settings.background.preset) || BACKGROUNDS[0];
+        return isDark() ? preset.dark : preset.light;
+      };
+      const resolveAccent = () =>
+        settings.accent.custom ||
+        (ACCENTS.find((p) => p.id === settings.accent.preset) || ACCENTS[0]).value;
+
+      /* ── Apply: write the palette to CSS variables on <html> ─────── */
+      function apply() {
+        palette = derivePalette(resolveBackground(), resolveAccent());
+        const root = document.documentElement;
+        const vars = {
+          '--color-bg': palette.background,
+          '--color-surface': palette.surface,
+          '--color-text': palette.text,
+          '--color-text-muted': palette.textMuted,
+          '--color-border': palette.border,
+          '--color-border-subtle': palette.borderSubtle,
+          '--color-accent': palette.accent,
+          '--color-on-accent': palette.onAccent,
+          '--color-accent-strong': palette.accentStrong,
+          '--color-scrim': palette.scrim,
+        };
+        for (const [name, value] of Object.entries(vars)) root.style.setProperty(name, value);
+        root.style.colorScheme = palette.scheme;
+        root.dataset.theme = palette.scheme;
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute('content', palette.background);
+        syncControls();
+      }
+
+      /* ── Build the controls ──────────────────────────────────────── */
+      const el = (tag, props = {}, children = []) => {
+        const node = Object.assign(document.createElement(tag), props);
+        for (const child of children) node.append(child);
+        return node;
+      };
+
+      const modeGroup = document.getElementById('mode-group');
+      for (const mode of MODES) {
+        const input = el('input', { type: 'radio', name: 'theme-mode', value: mode.id });
+        input.addEventListener('change', () => {
+          settings.mode = mode.id;
+          apply();
+        });
+        modeGroup.append(
+          el('label', { className: 'segment' }, [input, el('span', { textContent: mode.label })]),
+        );
+      }
+
+      function buildSwatchGroup(container, key, presets, legend) {
+        const radios = presets.map((preset) => {
+          const input = el('input', { type: 'radio', name: key, value: preset.id });
+          input.setAttribute('aria-label', preset.label);
+          input.addEventListener('change', () => {
+            settings[key] = { preset: preset.id };
+            apply();
+          });
+          const dot = el('span', { className: 'dot' });
+          dot.setAttribute('aria-hidden', 'true');
+          const label = el('label', { className: 'swatch', title: preset.label }, [input, dot]);
+          container.append(label);
+          return { input, dot, preset };
+        });
+
+        const pickerId = key + '-custom';
+        const picker = el('input', { type: 'color', id: pickerId, className: 'picker' });
+        // `input` fires continuously while dragging in the picker: live preview.
+        picker.addEventListener('input', () => {
+          settings[key] = { custom: normalizeHex(picker.value) };
+          apply();
+        });
+        const pickerLabel = el('label', {
+          htmlFor: pickerId,
+          className: 'visually-hidden',
+          textContent: 'Custom ' + legend + ' colour',
+        });
+        const wrapper = el('span', { className: 'swatch' }, [pickerLabel, picker]);
+        container.append(wrapper);
+        return { radios, picker, wrapper };
+      }
+
+      const backgroundControls = buildSwatchGroup(
+        document.getElementById('background-group'),
+        'background',
+        BACKGROUNDS,
+        'background',
+      );
+      const accentControls = buildSwatchGroup(
+        document.getElementById('accent-group'),
+        'accent',
+        ACCENTS,
+        'accent',
+      );
+
+      function syncSwatches(controls, choice, current) {
+        for (const { input, dot, preset } of controls.radios) {
+          input.checked = !choice.custom && choice.preset === preset.id;
+          dot.style.background = preset.value || (isDark() ? preset.dark : preset.light);
+        }
+        controls.picker.value = current;
+        controls.wrapper.toggleAttribute('data-selected', Boolean(choice.custom));
+      }
+
+      function syncControls() {
+        for (const input of modeGroup.querySelectorAll('input'))
+          input.checked = input.value === settings.mode;
+        syncSwatches(backgroundControls, settings.background, palette.background);
+        syncSwatches(accentControls, settings.accent, palette.accent);
+        document.getElementById('mode-hint').textContent = settings.background.custom
+          ? 'A custom background sets light or dark text by itself.'
+          : '';
+        document.getElementById('accent-note').textContent = palette.accentAdjusted
+          ? 'Accent outlines are adjusted slightly so they stay visible on this background.'
+          : '';
+      }
+
+      document.getElementById('reset-button').addEventListener('click', () => {
+        settings = structuredClone(DEFAULTS);
+        apply();
+      });
+
+      // Follow the device's light/dark setting live while in System mode.
+      darkQuery.addEventListener('change', () => {
+        if (settings.mode === 'system') apply();
+      });
+
+      /* ── Menu: native modal <dialog> ─────────────────────────────
+         showModal() traps focus, makes the page behind inert and handles
+         Escape. Clicks on the backdrop (the dialog element itself) close it.
+         Focus returns to the settings button when it closes. */
+      const menu = document.getElementById('menu');
+      const menuButton = document.getElementById('menu-button');
+
+      function openMenu() {
+        if (menu.open) return;
+        menu.showModal();
+        menuButton.setAttribute('aria-expanded', 'true');
+      }
+
+      function closeMenu() {
+        if (menu.open) menu.close();
+      }
+
+      menuButton.addEventListener('click', openMenu);
+      document.getElementById('close-button').addEventListener('click', closeMenu);
+      menu.addEventListener('click', (event) => {
+        if (event.target === menu) closeMenu();
+      });
+      menu.addEventListener('close', () => {
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.focus();
+      });
+
+      /* ════════════════════════════════════════════════════════════════
+         PLATFORM: SCREEN ROUTER
+         Shows either the game selection or one game's screen. The URL hash
+         records the screen (#truth-or-dare, #rolling-dice/2), so the
+         browser's own Back/Forward work too, including from file://.
+         Games register themselves; the router knows nothing about their
+         rules or state.
+         ════════════════════════════════════════════════════════════════ */
+      const selectionView = document.querySelector('.game-hero');
+      const backButton = document.getElementById('back-button');
+      const BASE_TITLE = document.title;
+      const screens = new Map();
+      let activeScreen = null;
+
+      /** Register a game screen: { view, option, title, accepts?(param), enter(param, fromNavigation), leave?() } */
+      function registerScreen(id, screen) {
+        screens.set(id, screen);
+      }
+
+      function navigate(id, param) {
+        location.hash = param ? id + '/' + param : id;
+      }
+
+      function currentRoute() {
+        const [id, ...rest] = location.hash.slice(1).split('/');
+        const param = rest.join('/'); // e.g. 2, or number/50 (Random Number's range)
+        const screen = screens.get(id);
+        return screen && (!screen.accepts || screen.accepts(param)) ? { screen, param } : null;
+      }
+
+      function showScreen(fromNavigation) {
+        const route = currentRoute();
+        const previous = activeScreen;
+        if (previous && previous !== route?.screen) previous.leave?.();
+        selectionView.hidden = Boolean(route);
+        for (const screen of screens.values()) screen.view.hidden = screen !== route?.screen;
+        backButton.hidden = !route;
+        document.title = route ? route.screen.title + ' — ' + BASE_TITLE : BASE_TITLE;
+        activeScreen = route?.screen ?? null;
+        if (route) route.screen.enter(route.param, fromNavigation);
+        else if (fromNavigation && previous) previous.option.focus(); // back where you left
+      }
+
+      backButton.addEventListener('click', () => {
+        // Return to the selection screen. Prefer stepping back in history so
+        // the browser's Back/Forward stay in sync; otherwise clear the hash.
+        if (history.state && history.state.fromSelection) history.back();
+        else location.hash = '';
+      });
+
+      window.addEventListener('hashchange', () => {
+        if (currentRoute()) history.replaceState({ fromSelection: true }, '');
+        showScreen(true);
+      });
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: TRUTH OR DARE  (UI prototype: no questions or logic yet)
+         ════════════════════════════════════════════════════════════════ */
+      (() => {
+        const option = document.querySelector('[data-game="truth-or-dare"]');
+        const flipCards = [...document.querySelectorAll('.flip-card')];
+
+        function setFlipped(card, flipped) {
+          card.setAttribute('aria-pressed', String(flipped));
+          // Only the visible face is exposed to screen readers.
+          card.querySelector('.face-front').setAttribute('aria-hidden', String(flipped));
+          card.querySelector('.face-back').setAttribute('aria-hidden', String(!flipped));
+        }
+
+        registerScreen('truth-or-dare', {
+          view: document.getElementById('truth-or-dare'),
+          option,
+          title: 'Truth or Dare',
+          enter(_param, fromNavigation) {
+            flipCards.forEach((card) => setFlipped(card, false)); // always start face up
+            if (fromNavigation) document.getElementById('tod-title').focus();
+          },
+        });
+
+        option.addEventListener('click', () => navigate('truth-or-dare'));
+
+        // Each card flips on its own, back and forth.
+        for (const card of flipCards) {
+          card.addEventListener('click', () =>
+            setFlipped(card, card.getAttribute('aria-pressed') !== 'true'),
+          );
+        }
+      })();
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: ROLLING DICE
+         Owns its popup, state, random rolls, 3D dice and results.
+         ════════════════════════════════════════════════════════════════ */
+      (() => {
+        const option = document.querySelector('[data-game="rolling-dice"]');
+        const picker = document.getElementById('dice-picker');
+        const pickerForm = document.getElementById('dice-picker-form');
+        const continueButton = document.getElementById('dice-picker-continue');
+        const pickerHint = document.getElementById('dice-picker-hint');
+        const tray = document.getElementById('dice-tray');
+        const results = document.getElementById('dice-results');
+        const announcer = document.getElementById('dice-announcer');
+        const rollButton = document.getElementById('roll-button');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+        /* State (this tab only). */
+        const state = {
+          count: 0, // dice in play (1–3)
+          dice: [], // [{ el, cube, value, rx, ry, rz }]
+          rolling: false,
+          rolled: false,
+          lastChoice: null, // remembered for the next time the popup opens
+          generation: 0, // bumps when the tray is rebuilt, so a stale roll can't land on new dice
+        };
+
+        /* ── Fair random: an integer 1–6, each value equally likely ──────
+           Uses the browser's cryptographic generator with rejection
+           sampling, so there is no modulo bias (252 = 6 × 42). */
+        function rollValue() {
+          const buffer = new Uint8Array(1);
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= 252);
+          return (buffer[0] % 6) + 1;
+        }
+
+        /* ── Cube orientation ────────────────────────────────────────────
+           Rotation (degrees) that turns each face towards the viewer.
+           Face layout matches the CSS: 1 front, 6 back, 3 right, 4 left,
+           2 top, 5 bottom (opposite faces add up to seven). */
+        const FACE_ROTATION = {
+          1: { x: 0, y: 0 },
+          6: { x: 0, y: 180 },
+          3: { x: 0, y: -90 },
+          4: { x: 0, y: 90 },
+          2: { x: -90, y: 0 },
+          5: { x: 90, y: 0 },
+        };
+
+        /* Pip positions on a 3 × 3 grid (1 = top-left … 9 = bottom-right). */
+        const PIPS = {
+          1: [5],
+          2: [3, 7],
+          3: [3, 5, 7],
+          4: [1, 3, 7, 9],
+          5: [1, 3, 5, 7, 9],
+          6: [1, 3, 4, 6, 7, 9],
+        };
+
+        function buildDie(index) {
+          const slot = document.createElement('div');
+          slot.className = 'die-slot';
+          const hop = document.createElement('div');
+          hop.className = 'die-hop';
+          const cube = document.createElement('div');
+          cube.className = 'die';
+          cube.dataset.index = String(index + 1);
+          for (let value = 1; value <= 6; value += 1) {
+            const face = document.createElement('div');
+            face.className = 'die-face';
+            face.dataset.value = String(value);
+            for (const cell of PIPS[value]) {
+              const pip = document.createElement('span');
+              pip.className = 'pip';
+              pip.style.gridArea = `${Math.ceil(cell / 3)} / ${((cell - 1) % 3) + 1}`;
+              face.append(pip);
+            }
+            cube.append(face);
+          }
+          hop.append(cube);
+          slot.append(hop);
+          return { el: slot, cube, value: 1, rx: 0, ry: 0, rz: 0 };
+        }
+
+        function setOrientation(die) {
+          die.cube.style.transform = `rotateX(${die.rx}deg) rotateY(${die.ry}deg) rotateZ(${die.rz}deg)`;
+          die.cube.dataset.value = String(die.value);
+        }
+
+        /* Smallest angle ≥ `from + minTurn` that is congruent to `target` (mod 360),
+           so the die always spins forward and ends exactly on the target face. */
+        function forwardTo(from, target, minTurn) {
+          return target + 360 * Math.ceil((from + minTurn - target) / 360);
+        }
+
+        function setupDice(count) {
+          state.generation += 1;
+          state.count = count;
+          state.rolled = false;
+          tray.dataset.count = String(count);
+          tray.replaceChildren();
+          state.dice = Array.from({ length: count }, (_, i) => buildDie(i));
+          // Start each die showing a random face (no animation).
+          for (const die of state.dice) {
+            die.value = rollValue();
+            die.rx = FACE_ROTATION[die.value].x;
+            die.ry = FACE_ROTATION[die.value].y;
+            die.cube.style.transition = 'none';
+            setOrientation(die);
+            tray.append(die.el);
+          }
+          tray.offsetWidth; // commit the starting pose before re-enabling transitions
+          for (const die of state.dice) die.cube.style.transition = '';
+          tray.setAttribute('aria-label', count === 1 ? 'One die' : `${count} dice`);
+          results.replaceChildren(
+            Object.assign(document.createElement('p'), {
+              className: 'dice-prompt',
+              textContent:
+                count === 1 ? 'Tap Roll to throw the die.' : 'Tap Roll to throw the dice.',
+            }),
+          );
+          announcer.textContent = '';
+          rollButton.textContent = 'Roll';
+          rollButton.disabled = false;
+          state.rolling = false;
+        }
+
+        function showResults() {
+          const values = state.dice.map((d) => d.value);
+          const total = values.reduce((sum, v) => sum + v, 0);
+          const list = document.createElement('ul');
+          list.className = 'result-list';
+          list.setAttribute('aria-label', 'Results');
+          values.forEach((value, i) => {
+            const item = document.createElement('li');
+            item.dataset.die = String(i + 1);
+            item.innerHTML =
+              state.count === 1 ? `You rolled <b>${value}</b>` : `Die ${i + 1}: <b>${value}</b>`;
+            list.append(item);
+          });
+          const nodes = [list];
+          if (state.count > 1) {
+            const totalEl = document.createElement('p');
+            totalEl.className = 'dice-total';
+            totalEl.id = 'dice-total';
+            totalEl.innerHTML = `<span>Total</span>${total}`;
+            nodes.push(totalEl);
+          }
+          results.replaceChildren(...nodes);
+          tray.setAttribute(
+            'aria-label',
+            state.count === 1 ? `Die showing ${values[0]}` : `Dice showing ${values.join(', ')}`,
+          );
+          announcer.textContent =
+            state.count === 1
+              ? `You rolled ${values[0]}.`
+              : values.map((v, i) => `Die ${i + 1}: ${v}`).join(', ') + `. Total ${total}.`;
+        }
+
+        /* Roll every die at once. Ignored while a roll is still animating. */
+        function roll() {
+          if (state.rolling || state.count === 0) return;
+          const generation = state.generation;
+          state.rolling = true;
+          rollButton.disabled = true;
+          rollButton.textContent = 'Rolling…';
+          results.setAttribute('aria-busy', 'true');
+          const instant = reducedMotion.matches;
+
+          const landed = state.dice.map((die, i) => {
+            die.value = rollValue();
+            const target = FACE_ROTATION[die.value];
+            // Several full turns on each axis, then exactly onto the result face.
+            const spins = instant ? 0 : 2 + i;
+            die.rx = forwardTo(die.rx, target.x, instant ? 0 : 360 * spins);
+            die.ry = forwardTo(die.ry, target.y, instant ? 0 : 360 * (spins + 1));
+            die.rz = die.rz + (instant ? 0 : 360 * (i % 2 ? -1 : 1));
+            const duration = instant ? 0 : 1000 + i * 120 + Math.round(Math.random() * 120);
+            die.el.style.setProperty('--roll-ms', duration + 'ms');
+            setOrientation(die);
+            return new Promise((resolve) => setTimeout(resolve, duration + 30));
+          });
+          if (!instant) {
+            tray.removeAttribute('data-rolling');
+            tray.offsetWidth; // restart the hop animation
+            tray.setAttribute('data-rolling', '');
+          }
+
+          Promise.all(landed).then(() => {
+            if (generation !== state.generation) return; // tray was rebuilt meanwhile
+            tray.removeAttribute('data-rolling');
+            state.rolling = false;
+            state.rolled = true;
+            results.removeAttribute('aria-busy');
+            showResults();
+            rollButton.disabled = false;
+            rollButton.textContent = 'Roll again';
+            if (document.activeElement === document.body) rollButton.focus();
+          });
+        }
+
+        rollButton.addEventListener('click', roll);
+
+        /* ── Popup: how many dice? ───────────────────────────────────── */
+        const radios = [...pickerForm.elements['dice-count']];
+
+        function openPicker() {
+          radios.forEach((r) => (r.checked = String(state.lastChoice) === r.value));
+          syncPicker();
+          picker.showModal();
+          (radios.find((r) => r.checked) || radios[0]).focus();
+        }
+
+        function syncPicker() {
+          const chosen = radios.some((r) => r.checked);
+          continueButton.disabled = !chosen;
+          pickerHint.hidden = chosen;
+        }
+
+        function closePicker() {
+          picker.close();
+          option.focus();
+        }
+
+        radios.forEach((r) => r.addEventListener('change', syncPicker));
+        option.addEventListener('click', openPicker);
+        document.getElementById('dice-picker-cancel').addEventListener('click', closePicker);
+        document.getElementById('dice-picker-close').addEventListener('click', closePicker);
+        picker.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closePicker();
+        });
+        picker.addEventListener('click', (event) => {
+          if (event.target === picker) closePicker(); // backdrop
+        });
+        pickerForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const chosen = radios.find((r) => r.checked);
+          if (!chosen) return;
+          state.lastChoice = Number(chosen.value);
+          picker.close();
+          navigate('rolling-dice', chosen.value);
+        });
+
+        registerScreen('rolling-dice', {
+          view: document.getElementById('rolling-dice'),
+          option,
+          title: 'Rolling Dice',
+          accepts: (param) => /^[123]$/.test(param),
+          enter(param, fromNavigation) {
+            const count = Number(param);
+            if (count !== state.count || !tray.childElementCount) setupDice(count);
+            state.lastChoice = count;
+            if (fromNavigation) document.getElementById('dice-title').focus();
+          },
+          leave() {
+            state.count = 0; // a fresh tray next time
+          },
+        });
+      })();
+
+      /* ════════════════════════════════════════════════════════════════
+         GAME: RANDOM PICKER
+         Owns its popup and one screen per mode (#random-picker/<mode>).
+         The modes are empty frames for now.
+         ════════════════════════════════════════════════════════════════ */
+      (() => {
+        const option = document.querySelector('[data-game="random-picker"]');
+        const picker = document.getElementById('mode-picker');
+        const pickerForm = document.getElementById('mode-picker-form');
+        const continueButton = document.getElementById('mode-picker-continue');
+        const pickerHint = document.getElementById('mode-picker-hint');
+        const title = document.getElementById('rp-title');
+        const placeholder = document.getElementById('rp-placeholder');
+        const stage = document.getElementById('rp-stage');
+        const resultBox = document.getElementById('rp-result');
+        const numberEl = document.getElementById('rp-number');
+        const rangeEl = document.getElementById('rp-range');
+        const announcer = document.getElementById('rp-announcer');
+        const pressButton = document.getElementById('rp-press');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const radios = [...pickerForm.elements['picker-mode']];
+
+        const MODES = {
+          card: { name: 'Card', placeholder: 'Your card picker will appear here.' },
+          wheel: { name: 'Spinning Wheel', placeholder: 'Your spinning wheel will appear here.' },
+          number: { name: 'Random Number', placeholder: 'Your random number will appear here.' },
+          alphabet: {
+            name: 'Random Alphabet',
+            placeholder: 'Your random letter will appear here.',
+          },
+        };
+
+        let lastChoice = null; // remembered for the next time the popup opens (this tab only)
+
+        function openPicker() {
+          radios.forEach((r) => (r.checked = r.value === lastChoice));
+          syncPicker();
+          picker.showModal();
+          (radios.find((r) => r.checked) || radios[0]).focus();
+        }
+
+        function syncPicker() {
+          const chosen = radios.some((r) => r.checked);
+          continueButton.disabled = !chosen;
+          pickerHint.hidden = chosen;
+        }
+
+        function closePicker() {
+          picker.close();
+          option.focus();
+        }
+
+        radios.forEach((r) => r.addEventListener('change', syncPicker));
+        option.addEventListener('click', openPicker);
+        document.getElementById('mode-picker-cancel').addEventListener('click', closePicker);
+        document.getElementById('mode-picker-close').addEventListener('click', closePicker);
+        picker.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closePicker();
+        });
+        picker.addEventListener('click', (event) => {
+          if (event.target === picker) closePicker(); // backdrop
+        });
+        pickerForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const chosen = radios.find((r) => r.checked);
+          if (!chosen) return;
+          lastChoice = chosen.value;
+          picker.close();
+          if (chosen.value === 'number') openRange();
+          else if (chosen.value === 'wheel') openWheelSetup('home');
+          else {
+            rollOnArrival = chosen.value === 'alphabet'; // a letter appears straight away
+            navigate('random-picker', chosen.value);
+          }
+        });
+
+        /* ── Random Number: range popup (1 to 10, or 1 to X) ─────────── */
+        const MAX_LIMIT = 1000000;
+        const rangePicker = document.getElementById('range-picker');
+        const rangeForm = document.getElementById('range-picker-form');
+        const rangeRadios = [...rangeForm.elements['number-range']];
+        const rangeField = document.getElementById('range-field');
+        const maxInput = document.getElementById('range-max');
+        const rangeContinue = document.getElementById('range-picker-continue');
+        const rangeHint = document.getElementById('range-picker-hint');
+        const RANGE_HINT = 'Choose a range, then tap PRESS.';
+        const MAX_HINT = 'Enter a whole number from 2 to ' + MAX_LIMIT.toLocaleString() + '.';
+        let lastMax = null; // remembered for the next time the popup opens (this tab only)
+        let rollOnArrival = false; // set by PRESS: roll the first number as the screen opens
+
+        /** A valid top number for "1 to X", or null. */
+        function parseMax(text) {
+          const clean = text.trim().replace(/[\s,]/g, '');
+          if (!/^\d+$/.test(clean)) return null;
+          const n = Number(clean);
+          return n >= 2 && n <= MAX_LIMIT ? n : null;
+        }
+
+        function chosenMax() {
+          const range = rangeRadios.find((r) => r.checked)?.value;
+          if (range === 'ten') return 10;
+          if (range === 'custom') return parseMax(maxInput.value);
+          return null;
+        }
+
+        function syncRange() {
+          const range = rangeRadios.find((r) => r.checked)?.value;
+          const max = chosenMax();
+          rangeField.hidden = range !== 'custom';
+          rangeContinue.disabled = max === null;
+          const typedBad = range === 'custom' && maxInput.value.trim() !== '' && max === null;
+          maxInput.setAttribute('aria-invalid', String(typedBad));
+          rangeHint.textContent = range === 'custom' ? MAX_HINT : RANGE_HINT;
+          rangeHint.hidden = max !== null;
+        }
+
+        function openRange() {
+          const custom = lastMax !== null && lastMax !== 10;
+          rangeRadios.forEach(
+            (r) => (r.checked = lastMax !== null && r.value === (custom ? 'custom' : 'ten')),
+          );
+          maxInput.value = custom ? String(lastMax) : '';
+          syncRange();
+          rangePicker.showModal();
+          (rangeRadios.find((r) => r.checked) || rangeRadios[0]).focus();
+        }
+
+        function closeRange() {
+          rangePicker.close();
+          option.focus();
+        }
+
+        rangeRadios.forEach((r) =>
+          r.addEventListener('change', () => {
+            syncRange();
+            if (r.value === 'custom' && r.checked) maxInput.focus();
+          }),
+        );
+        maxInput.addEventListener('input', syncRange);
+        document.getElementById('range-picker-close').addEventListener('click', closeRange);
+        document.getElementById('range-picker-back').addEventListener('click', () => {
+          rangePicker.close();
+          openPicker(); // back to "Choose a picker", Random Number still selected
+        });
+        rangePicker.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeRange();
+        });
+        rangePicker.addEventListener('click', (event) => {
+          if (event.target === rangePicker) closeRange(); // backdrop
+        });
+        rangeForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const max = chosenMax();
+          if (max === null) {
+            if (rangeRadios.some((r) => r.checked)) maxInput.focus();
+            return;
+          }
+          lastMax = max;
+          rangePicker.close();
+          rollOnArrival = true;
+          navigate('random-picker', 'number/' + max);
+        });
+
+        /* ── Random Number & Random Alphabet: the game ──────────────────
+           Both pick a fair random index 1–max; the alphabet shows it as
+           a letter (1 = A … 26 = Z). */
+        const game = { kind: 'number', max: 0, rolling: false, token: 0 }; // token: a stale roll can't land
+        const KINDS = {
+          number: {
+            format: (n) => n.toLocaleString(),
+            noun: 'number',
+            range: (max) => 'from 1 to ' + max.toLocaleString(),
+          },
+          alphabet: {
+            format: (n) => String.fromCharCode(64 + n),
+            noun: 'letter',
+            range: () => 'from A to Z',
+          },
+        };
+
+        /* Fair random integer 1–max: crypto generator with rejection
+           sampling, so every number is equally likely (no modulo bias). */
+        function randomUpTo(max) {
+          const buffer = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= limit);
+          return (buffer[0] % max) + 1;
+        }
+
+        function showNumber(n) {
+          const text = KINDS[game.kind].format(n);
+          numberEl.textContent = text;
+          numberEl.style.setProperty('--len', String(Math.max(2, text.length)));
+        }
+
+        function resetNumberGame(max, kind = 'number') {
+          const k = KINDS[kind];
+          game.token++;
+          game.rolling = false;
+          game.kind = kind;
+          game.max = max;
+          stage.removeAttribute('data-rolling');
+          stage.removeAttribute('data-landed');
+          resultBox.hidden = true;
+          placeholder.hidden = false;
+          placeholder.textContent = 'Tap Pick a ' + k.noun + ' to choose ' + k.range(max) + '.';
+          pressButton.textContent = 'Pick a ' + k.noun;
+          rangeEl.textContent = k.range(max);
+          announcer.textContent = '';
+          pressButton.removeAttribute('aria-disabled');
+        }
+
+        function press() {
+          if (game.rolling || !game.max) return;
+          const token = ++game.token;
+          const final = randomUpTo(game.max);
+          const land = () => {
+            if (token !== game.token) return;
+            game.rolling = false;
+            stage.removeAttribute('data-rolling');
+            showNumber(final);
+            stage.removeAttribute('data-landed');
+            void stage.offsetWidth; // restart the landing pop
+            stage.setAttribute('data-landed', '');
+            pressButton.removeAttribute('aria-disabled');
+            announcer.textContent = 'You got ' + KINDS[game.kind].format(final) + '.';
+            pressButton.textContent = 'Pick again';
+          };
+          placeholder.hidden = true;
+          resultBox.hidden = false;
+          announcer.textContent = '';
+          if (reducedMotion.matches) return land();
+          // A short "shuffle" through random values, slowing down, then land.
+          game.rolling = true;
+          pressButton.setAttribute('aria-disabled', 'true');
+          stage.setAttribute('data-rolling', '');
+          stage.removeAttribute('data-landed');
+          const delays = [40, 40, 45, 50, 55, 60, 70, 80, 95, 115, 140];
+          let i = 0;
+          const tick = () => {
+            if (token !== game.token) return;
+            if (i === delays.length) return land();
+            showNumber(randomUpTo(game.max));
+            setTimeout(tick, delays[i++]);
+          };
+          tick();
+        }
+
+        pressButton.addEventListener('click', press);
+
+        /* ── Spinning Wheel ─────────────────────────────────────────────
+           Options live in memory for this tab only (nothing is saved). */
+        const WHEEL_MIN = 2;
+        const WHEEL_MAX = 50;
+        const WHEEL_SPIN_MS = 4800;
+        // Bright, party-style slice colours (like a real prize wheel).
+        const WHEEL_COLORS = [
+          '#E53935',
+          '#FB8C00',
+          '#FDD835',
+          '#43A047',
+          '#00ACC1',
+          '#1E88E5',
+          '#5E35B1',
+          '#D81B60',
+          '#8E24AA',
+          '#7CB342',
+        ];
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const wheelEl = document.getElementById('wheel');
+        const wheelSvg = document.getElementById('wheel-svg');
+        const wheelResult = document.getElementById('wheel-result');
+        const wheelResultText = document.getElementById('wheel-result-text');
+        const wheelActions = document.getElementById('wheel-actions');
+        const wheelSpinButton = document.getElementById('wheel-spin');
+        const wheelEditButton = document.getElementById('wheel-edit');
+        const screenEl = document.getElementById('random-picker');
+        const wheel = { options: [], rotation: 0, spinning: false, token: 0 };
+        let spinOnArrival = false; // set by PRESS in the options popup
+
+        /** Text colour (near-black or white) that reads best on a slice colour. */
+        function inkOn(hex) {
+          const [r, g, b] = [1, 3, 5].map((i) => {
+            const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          });
+          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          return (lum + 0.05) / 0.05 >= 1.05 / (lum + 0.05) ? '#111111' : '#FFFFFF';
+        }
+
+        /** Slice colours, never repeating next to each other (also last → first). */
+        function sliceColors(count) {
+          const n = WHEEL_COLORS.length;
+          return Array.from({ length: count }, (_, i) => {
+            if (i === count - 1 && count > 2 && i % n === 0) return WHEEL_COLORS[1];
+            return WHEEL_COLORS[i % n];
+          });
+        }
+
+        function buildWheel() {
+          const options = wheel.options;
+          const count = options.length;
+          const colors = sliceColors(count);
+          const slice = (2 * Math.PI) / count;
+          const r = 100;
+          // Label size and length shrink as slices get thinner.
+          const fontSize = Math.max(4.2, Math.min(11, 0.62 * r * slice * 0.55));
+          const room = 0.64 * r; // from the hub's edge to the label's end
+          const minSize = Math.min(fontSize, 6);
+          const parts = [];
+          options.forEach((text, i) => {
+            const a0 = i * slice - Math.PI / 2;
+            const a1 = a0 + slice;
+            const x0 = r * Math.cos(a0);
+            const y0 = r * Math.sin(a0);
+            const x1 = r * Math.cos(a1);
+            const y1 = r * Math.sin(a1);
+            const large = slice > Math.PI ? 1 : 0;
+            const path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute(
+              'd',
+              count === 1
+                ? 'M0 -100A100 100 0 1 1 0 100A100 100 0 1 1 0 -100z'
+                : `M0 0L${x0.toFixed(3)} ${y0.toFixed(3)}A${r} ${r} 0 ${large} 1 ${x1.toFixed(3)} ${y1.toFixed(3)}z`,
+            );
+            path.setAttribute('fill', colors[i]);
+            path.setAttribute('stroke', '#FFFFFF');
+            path.setAttribute('stroke-width', count > 30 ? '0.6' : '1.2');
+            parts.push(path);
+
+            const label = document.createElementNS(SVG_NS, 'text');
+            const mid = ((a0 + slice / 2) * 180) / Math.PI;
+            label.setAttribute('transform', `rotate(${mid.toFixed(3)}) translate(${r * 0.88} 0)`);
+            label.setAttribute('text-anchor', 'end');
+            label.setAttribute('dominant-baseline', 'central');
+            // Long labels shrink to fit first; only if still too long are they cut.
+            const size = Math.max(minSize, Math.min(fontSize, room / (0.56 * text.length)));
+            const maxChars = Math.max(3, Math.floor(room / (0.56 * size)));
+            label.setAttribute('font-size', size.toFixed(2));
+            label.setAttribute('fill', inkOn(colors[i]));
+            label.textContent = text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text;
+            parts.push(label);
+          });
+          wheelSvg.replaceChildren(...parts);
+          wheelSvg.setAttribute('aria-label', `Spinning wheel with ${count} options`);
+          setWheelRotation(wheel.rotation, false);
+          // Swatches in the options list match the slices.
+          [...wheelList.children].forEach((li, i) => {
+            li.querySelector('.wheel-swatch').style.background = colors[i];
+          });
+        }
+
+        function setWheelRotation(deg, animate) {
+          wheelSvg.style.transition = animate
+            ? `transform ${WHEEL_SPIN_MS}ms cubic-bezier(0.12, 0.6, 0.1, 1)`
+            : 'none';
+          wheelSvg.style.transform = `rotate(${deg}deg)`;
+        }
+
+        function setWheelBusy(busy) {
+          wheel.spinning = busy;
+          [wheelSpinButton, wheelEditButton].forEach((b) =>
+            busy ? b.setAttribute('aria-disabled', 'true') : b.removeAttribute('aria-disabled'),
+          );
+        }
+
+        function spinWheel() {
+          if (wheel.spinning || wheel.options.length < WHEEL_MIN) return;
+          const count = wheel.options.length;
+          const winner = randomUpTo(count) - 1;
+          const sliceDeg = 360 / count;
+          // Land somewhere inside the winning slice (not always dead centre).
+          const offset = (randomUpTo(1000) / 1000 - 0.5) * sliceDeg * 0.7;
+          const target = 360 - ((winner + 0.5) * sliceDeg + offset); // slice under the pointer
+          const current = ((wheel.rotation % 360) + 360) % 360;
+          const delta = (((target - current) % 360) + 360) % 360;
+          const turns = reducedMotion.matches ? 0 : 5 + randomUpTo(2);
+          wheel.rotation += turns * 360 + delta;
+          const token = ++wheel.token;
+          wheelResult.hidden = true;
+          announcer.textContent = '';
+          const finish = () => {
+            if (token !== wheel.token) return;
+            setWheelBusy(false);
+            wheelResultText.textContent = wheel.options[winner];
+            wheelResult.hidden = false;
+            wheelSpinButton.textContent = 'Spin again';
+            announcer.textContent = 'The wheel landed on ' + wheel.options[winner] + '.';
+          };
+          if (reducedMotion.matches) {
+            setWheelRotation(wheel.rotation, false);
+            return finish();
+          }
+          setWheelBusy(true);
+          void wheelSvg.getBoundingClientRect(); // make sure the browser starts from the current angle
+          setWheelRotation(wheel.rotation, true);
+          setTimeout(finish, WHEEL_SPIN_MS + 60);
+        }
+
+        /** Shows the wheel screen for the current options (or asks for some). */
+        function showWheelScreen() {
+          wheel.token++;
+          setWheelBusy(false);
+          const ready = wheel.options.length >= WHEEL_MIN;
+          stage.hidden = ready;
+          wheelEl.hidden = !ready;
+          wheelActions.hidden = false;
+          wheelResult.hidden = true;
+          wheelSpinButton.hidden = !ready;
+          wheelSpinButton.textContent = 'Spin';
+          wheelEditButton.textContent = ready ? 'Edit options' : 'Add options';
+          if (ready) buildWheel();
+          else placeholder.textContent = 'Add 2 to 50 options to make your wheel.';
+        }
+
+        wheelSpinButton.addEventListener('click', spinWheel);
+        wheelEditButton.addEventListener('click', () => {
+          if (!wheel.spinning) openWheelSetup('screen');
+        });
+
+        /* ── Spinning Wheel: options popup ─────────────────────────────── */
+        const wheelSetup = document.getElementById('wheel-setup');
+        const wheelForm = document.getElementById('wheel-setup-form');
+        const wheelInput = document.getElementById('wheel-input');
+        const wheelAddButton = document.getElementById('wheel-add');
+        const wheelList = document.getElementById('wheel-list');
+        const wheelCount = document.getElementById('wheel-count');
+        const wheelHint = document.getElementById('wheel-hint');
+        const wheelPress = document.getElementById('wheel-setup-press');
+        const wheelBack = document.getElementById('wheel-setup-back');
+        let draft = []; // options being edited in the popup
+        let setupFrom = 'home'; // where the popup was opened from
+
+        const removeIcon =
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+          '<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+        function renderDraft(focusIndex) {
+          const colors = sliceColors(draft.length);
+          wheelList.replaceChildren(
+            ...draft.map((text, i) => {
+              const li = document.createElement('li');
+              const swatch = document.createElement('span');
+              swatch.className = 'wheel-swatch';
+              swatch.style.background = colors[i];
+              const label = document.createElement('span');
+              label.className = 'wheel-item-text';
+              label.textContent = text;
+              const remove = document.createElement('button');
+              remove.type = 'button';
+              remove.className = 'icon-button';
+              remove.setAttribute('aria-label', 'Remove ' + text);
+              remove.innerHTML = removeIcon;
+              remove.addEventListener('click', () => {
+                draft.splice(i, 1);
+                renderDraft(i);
+              });
+              li.append(swatch, label, remove);
+              return li;
+            }),
+          );
+          const full = draft.length >= WHEEL_MAX;
+          wheelCount.textContent = `${draft.length} / ${WHEEL_MAX} options`;
+          wheelInput.disabled = full;
+          wheelAddButton.disabled = full;
+          wheelPress.disabled = draft.length < WHEEL_MIN;
+          wheelHint.hidden = draft.length >= WHEEL_MIN && !full;
+          wheelHint.textContent = full
+            ? `That's the maximum of ${WHEEL_MAX} options.`
+            : `Add at least ${WHEEL_MIN} options.`;
+          if (focusIndex !== undefined) {
+            const buttons = wheelList.querySelectorAll('button');
+            (buttons[Math.min(focusIndex, buttons.length - 1)] || wheelInput).focus();
+          }
+        }
+
+        function addOption() {
+          const text = wheelInput.value.trim().replace(/\s+/g, ' ');
+          if (!text || draft.length >= WHEEL_MAX) {
+            wheelInput.focus();
+            return;
+          }
+          draft.push(text);
+          wheelInput.value = '';
+          renderDraft();
+          wheelList.lastElementChild?.scrollIntoView({ block: 'nearest' });
+          if (!wheelInput.disabled) wheelInput.focus();
+          else wheelPress.focus();
+        }
+
+        function openWheelSetup(from) {
+          setupFrom = from;
+          draft = [...wheel.options];
+          wheelInput.value = '';
+          wheelBack.textContent = from === 'screen' ? 'Cancel' : 'Back';
+          renderDraft();
+          wheelSetup.showModal();
+          (wheelInput.disabled ? wheelPress : wheelInput).focus();
+        }
+
+        function closeWheelSetup() {
+          wheelSetup.close();
+          (setupFrom === 'screen' ? wheelEditButton : option).focus();
+        }
+
+        wheelAddButton.addEventListener('click', addOption);
+        wheelInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Enter adds the option; PRESS starts the game
+            addOption();
+          }
+        });
+        document.getElementById('wheel-setup-close').addEventListener('click', closeWheelSetup);
+        wheelBack.addEventListener('click', () => {
+          if (setupFrom === 'screen') return closeWheelSetup();
+          wheelSetup.close();
+          openPicker(); // back to "Choose a picker", Spinning Wheel still selected
+        });
+        wheelSetup.addEventListener('cancel', (event) => {
+          event.preventDefault(); // Escape: close and restore focus ourselves
+          closeWheelSetup();
+        });
+        wheelSetup.addEventListener('click', (event) => {
+          if (event.target === wheelSetup) closeWheelSetup(); // backdrop
+        });
+        wheelForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (draft.length < WHEEL_MIN) return;
+          wheel.options = [...draft];
+          wheelSetup.close();
+          if (location.hash === '#random-picker/wheel') {
+            // Already on the wheel screen (Edit options): rebuild and spin.
+            showWheelScreen();
+            wheelSpinButton.focus();
+            spinWheel();
+          } else {
+            spinOnArrival = true;
+            navigate('random-picker', 'wheel');
+          }
+        });
+
+        /** Splits a route param such as number/50 into { mode, max }. */
+        function parseParam(param) {
+          const [mode, extra] = param.split('/');
+          if (mode === 'number') {
+            const max = extra !== undefined && /^\d+$/.test(extra) ? parseMax(extra) : null;
+            return max === null ? null : { mode, max };
+          }
+          return Object.hasOwn(MODES, mode) && extra === undefined ? { mode } : null;
+        }
+
+        registerScreen('random-picker', {
+          view: document.getElementById('random-picker'),
+          option,
+          // Read by the router before enter(), so it follows the URL.
+          get title() {
+            const mode = MODES[location.hash.slice(1).split('/')[1]];
+            return mode ? mode.name : 'Random Picker';
+          },
+          accepts: (param) => parseParam(param) !== null,
+          enter(param, fromNavigation) {
+            const route = parseParam(param);
+            const mode = MODES[route.mode];
+            title.textContent = mode.name;
+            const playable = route.mode === 'number' || route.mode === 'alphabet';
+            const isWheel = route.mode === 'wheel';
+            screenEl.dataset.mode = route.mode;
+            pressButton.hidden = !playable;
+            stage.hidden = false;
+            wheelEl.hidden = true;
+            wheelResult.hidden = true;
+            wheelActions.hidden = true;
+            if (playable) {
+              if (route.mode === 'number') resetNumberGame(route.max);
+              else resetNumberGame(26, 'alphabet');
+              if (rollOnArrival) press(); // started from the popup: roll straight away
+            } else {
+              resetNumberGame(0);
+              placeholder.textContent = mode.placeholder;
+              if (isWheel) {
+                showWheelScreen();
+                if (spinOnArrival) spinWheel(); // PRESS in the options popup starts the game
+              }
+            }
+            rollOnArrival = false;
+            spinOnArrival = false;
+            lastChoice = route.mode;
+            if (route.max) lastMax = route.max;
+            if (fromNavigation) title.focus();
+          },
+          leave() {
+            game.token++; // stop a roll that is still running
+            game.rolling = false;
+            wheel.token++; // and a wheel that is still spinning
+            setWheelBusy(false);
+          },
+        });
+      })();
+
+      // The welcome bounce plays once per page load; after the last button
+      // finishes, the buttons stay still (also when returning from a game).
+      const lastButton = selectionView.querySelector('li:last-child .game-option');
+      lastButton.addEventListener(
+        'animationend',
+        () => selectionView.setAttribute('data-settled', ''),
+        { once: true },
+      );
+
+      // iOS Safari only applies :active (the pressed style) when the page
+      // listens for touches; this empty, passive listener enables it.
+      document.addEventListener('touchstart', () => {}, { passive: true });
+
+      showScreen(false);
+      apply();
+    </script>
+  </body>
+</html>
