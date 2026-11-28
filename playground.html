@@ -831,6 +831,41 @@
           gap: var(--space-2);
           padding-block: var(--space-3);
         }
+        /* Never Have I Ever game: the card on the left, Next on the right. */
+        #never-have-i-ever:has(#nh-card:not([hidden])) {
+          display: grid;
+          grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+          grid-template-areas:
+            'title title'
+            'card next'
+            'card links';
+          align-items: center;
+          column-gap: var(--space-5);
+          row-gap: var(--space-2);
+          max-width: 48rem;
+        }
+        #nh-title {
+          grid-area: title;
+        }
+        #nh-card {
+          grid-area: card;
+          width: 100%;
+          padding-block: var(--space-3);
+        }
+        #nh-next {
+          grid-area: next;
+          align-self: end;
+          justify-self: center;
+          min-width: 0;
+          width: 100%;
+        }
+        #nh-links {
+          grid-area: links;
+          align-self: start;
+          justify-self: center;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
         /* Never Have I Ever has four levels: one row of four. */
         #nh-level .mode-options.wml-levels {
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3867,12 +3902,15 @@
         cursor: progress;
       }
 
-      /* Never Have I Ever: a short line under the player count. */
-      .nh-note {
-        margin: 0;
+      /* Never Have I Ever: the question card. "Never have I ever…" sits
+         small above each question so the question itself stays big. */
+      .nh-card .nh-lead {
+        display: block;
+        margin-bottom: var(--space-1);
         color: var(--color-text-muted);
-        font-weight: 600;
-        text-align: center;
+        font-size: 0.6em;
+        font-weight: 650;
+        letter-spacing: 0.02em;
       }
 
       @media (orientation: landscape) and (max-height: 30rem) {
@@ -4259,18 +4297,20 @@
           </div>
         </section>
 
-        <!-- Never Have I Ever: first how many are playing, then the level
-             (questions come next). -->
+        <!-- Never Have I Ever: after choosing the players and level, the game
+             asks one question at a time. -->
         <section class="rp-game" id="never-have-i-ever" aria-labelledby="nh-title" hidden>
           <h1 id="nh-title" tabindex="-1">Never Have I Ever</h1>
-          <div class="rp-stage" id="nh-stage">
-            <div class="rp-result">
-              <span class="rp-number" id="nh-count" aria-hidden="true">?</span>
-              <span class="rp-range" id="nh-caption">Choose how many are playing</span>
-            </div>
-          </div>
-          <p class="nh-note" id="nh-note" hidden>Questions are coming next.</p>
+          <figure class="hs-question nh-card" id="nh-card" hidden>
+            <figcaption class="hs-question-label" id="nh-label">Question 1</figcaption>
+            <p class="hs-question-text" id="nh-text"></p>
+            <p class="hs-who" id="nh-rule"></p>
+          </figure>
+          <button type="button" class="action-button roll-button" id="nh-next" hidden>
+            Next question
+          </button>
           <div class="hs-links" id="nh-links" hidden>
+            <span class="tod-setup" id="nh-setup"></span>
             <button type="button" class="hs-more" id="nh-players-open">Change setup</button>
           </div>
           <p class="visually-hidden" id="nh-announcer" role="status" aria-live="polite"></p>
@@ -10575,12 +10615,184 @@
         const MIN = 2;
         const MAX = 20;
         const LEVEL_NAMES = { easy: 'Easy', medium: 'Medium', hard: 'Hard', bold: 'Bold' };
+        const EASY = [
+          'eaten a whole pizza by myself',
+          'fallen asleep in class',
+          'sung in the shower',
+          'cried at a movie',
+          "forgotten someone's name right after meeting them",
+          'binge-watched a whole series in one day',
+          'laughed so hard I cried',
+          'tripped in public',
+          'talked to a pet like it was a person',
+          'eaten food that fell on the floor',
+          "waved back at someone who wasn't waving at me",
+          'pretended to be on the phone',
+          'stayed up all night',
+          'missed a bus or train by seconds',
+          'worn my clothes inside out all day',
+          'looked for my phone while holding it',
+          'sent a text to the wrong person',
+          'danced alone in my room',
+          'eaten dessert before dinner',
+          'googled myself',
+          'fallen off a bicycle',
+          'had a nickname I hated',
+          'been on a plane',
+          'broken a bone',
+          'dyed my hair',
+          'won a prize in a competition',
+          'made a prank call',
+          "laughed at a joke I didn't understand",
+          'eaten something past its expiry date',
+          'cooked a meal for my whole family',
+          'locked myself out of my house',
+          'ridden a roller coaster',
+          'called a teacher "Mom" or "Dad" by mistake',
+          'gone a whole day without my phone',
+          'watched a horror movie alone',
+          'stayed in pyjamas all day',
+          'spilled a drink on someone',
+          'read a whole book in one day',
+          'walked into a glass door',
+          'forgotten what I was saying mid-sentence',
+        ];
+        const MEDIUM = [
+          'pretended to be sick to skip school or work',
+          'lied about my age',
+          "checked out an ex's social media",
+          "read someone else's messages",
+          're-gifted a present',
+          'blamed someone else for something I did',
+          'cheated in a board game',
+          "had a crush on a friend's sibling",
+          'ghosted someone',
+          'pretended to like a gift',
+          "forgotten a close friend's birthday",
+          `said "I'm on my way" while still in bed`,
+          "eavesdropped on a stranger's conversation",
+          'cried to get out of trouble',
+          'made up an excuse to get out of plans',
+          "eaten off a friend's plate without asking",
+          'pretended to know a song',
+          'been on a blind date',
+          'had a secret social media account',
+          "gone through someone's bag without asking",
+          'laughed at a serious moment',
+          'regretted a haircut immediately',
+          'broken something and hidden it',
+          'told a secret I promised to keep',
+          'practised a conversation in the mirror',
+          'cancelled plans to stay home and do nothing',
+          "fake-laughed at a boss's joke",
+          'written a love letter',
+          'pretended not to see someone I know',
+          'said "I love you" first',
+          'argued with a stranger online',
+          "taken credit for someone else's idea",
+          'pretended to be busy to avoid a call',
+          'cried in a public bathroom',
+          'sung karaoke in front of strangers',
+          'exaggerated on my CV',
+          'had a crush on someone in this room',
+          'been dumped by text',
+          'stayed friends with an ex',
+          'kept something I borrowed for years',
+        ];
+        const HARD = [
+          "had a crush on a friend's partner",
+          'told a lie that got someone else in trouble',
+          'kept a secret from my best friend for over a year',
+          'said something hurtful I still regret',
+          "been jealous of a close friend's success",
+          'pretended to be someone else online',
+          "broken someone's heart",
+          'cheated on a test',
+          "read someone's diary",
+          'ended a friendship over something small',
+          'lied to my parents about where I was',
+          "talked behind a friend's back",
+          'had feelings for two people at once',
+          'given someone the silent treatment for days',
+          'ignored a call from my parents on purpose',
+          'secretly hoped a couple would break up',
+          "pretended to be happy for someone when I wasn't",
+          'lied in a job interview',
+          'dated someone to make another person jealous',
+          "deleted a message so someone wouldn't see it",
+          'still had feelings for an ex while dating someone new',
+          'kept a gift from an ex',
+          'pretended to be asleep to avoid a conversation',
+          'stayed in a relationship I knew was wrong',
+          'lied to a friend to avoid hanging out',
+          'spread a rumour',
+          'been the reason a couple broke up',
+          'faked being ill to get sympathy',
+          'kept money I found',
+          'got back together with an ex',
+          'blocked a family member online',
+          'snuck out of the house at night',
+          "made a big decision I've never told anyone about",
+          'sent a message I immediately wanted to unsend',
+          `said "I'm fine" when I really wasn't`,
+          'had a crush that lasted more than a year',
+          'cried myself to sleep',
+          'been turned down by someone I liked',
+          'kept a friendship going only out of guilt',
+          "read my partner's messages",
+        ];
+        const BOLD = [
+          'kissed someone I just met',
+          'kissed a friend',
+          'had a crush on two people in this room',
+          'confessed my feelings and been turned down',
+          'gone skinny-dipping',
+          'asked someone out in front of other people',
+          "slid into a celebrity's DMs",
+          'sent a flirty text to the wrong person',
+          'gone on a date with someone I met online',
+          'flirted my way out of trouble',
+          'kissed someone on a dare',
+          'dated two people at the same time',
+          'had a secret relationship',
+          'been caught kissing',
+          'made the first move',
+          'stayed out all night without telling anyone',
+          'gone on a trip without telling my family',
+          'kissed someone in the rain',
+          'had a holiday romance',
+          'got a tattoo on impulse',
+          "walked into a stranger's party uninvited",
+          'broken up with someone on their birthday',
+          'kissed someone in a movie theatre',
+          'used a cheesy pickup line that actually worked',
+          'lied about my relationship status',
+          'gone on three dates in one week',
+          'danced on a table',
+          'been asked to leave a party',
+          'said "I love you" without meaning it',
+          "dated someone my friends didn't approve of",
+          'texted an ex late at night',
+          'had a crush on my best friend',
+          'skipped school or work for a date',
+          'pretended to be someone else to impress a crush',
+          'written a secret poem about someone',
+          'kissed more than one person in one night',
+          'sung a love song to someone in public',
+          'gone on a date in my pyjamas',
+          'asked a stranger for their number',
+          'fallen for someone at first sight',
+        ];
+        const QUESTIONS = { easy: EASY, medium: MEDIUM, hard: HARD, bold: BOLD };
         const view = document.getElementById('never-have-i-ever');
         const option = document.querySelector('[data-game="never-have-i-ever"]');
         const title = document.getElementById('nh-title');
-        const countEl = document.getElementById('nh-count');
-        const caption = document.getElementById('nh-caption');
-        const note = document.getElementById('nh-note');
+        const card = document.getElementById('nh-card');
+        const label = document.getElementById('nh-label');
+        const text = document.getElementById('nh-text');
+        const rule = document.getElementById('nh-rule');
+        const nextButton = document.getElementById('nh-next');
+        const setupLine = document.getElementById('nh-setup');
         const links = document.getElementById('nh-links');
         const changeButton = document.getElementById('nh-players-open');
         const announcer = document.getElementById('nh-announcer');
@@ -10604,7 +10816,55 @@
           lastPlayers: null,
           lastLevel: null,
           from: 'start', // 'start' (before the game) | 'change' (during it)
+          number: 0, // questions asked in this game
+          bag: [], // this level's questions, shuffled: each once before any repeats
+          question: null,
         };
+
+        /* Fair random integer 0..max-1 (crypto, no modulo bias). */
+        function randomBelow(max) {
+          const buffer = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          do crypto.getRandomValues(buffer);
+          while (buffer[0] >= limit);
+          return buffer[0] % max;
+        }
+
+        /* The next question: every one comes up once before any repeats, and
+           a reshuffle never starts with the question just asked. */
+        function draw() {
+          let restarted = false;
+          if (!state.bag.length) {
+            const list = [...QUESTIONS[state.level]];
+            for (let i = list.length - 1; i > 0; i--) {
+              const j = randomBelow(i + 1);
+              [list[i], list[j]] = [list[j], list[i]];
+            }
+            if (list[list.length - 1] === state.question)
+              [list[0], list[list.length - 1]] = [list[list.length - 1], list[0]];
+            restarted = state.number > 0;
+            state.bag = list;
+          }
+          state.question = state.bag.pop();
+          return restarted;
+        }
+
+        function ask() {
+          const restarted = draw();
+          state.number += 1;
+          label.textContent = `Question ${state.number} · ${LEVEL_NAMES[state.level]}`;
+          text.replaceChildren(
+            Object.assign(document.createElement('span'), {
+              className: 'nh-lead',
+              textContent: 'Never have I ever…',
+            }),
+            `${state.question}.`,
+          );
+          announcer.textContent =
+            (restarted
+              ? `That's all ${QUESTIONS[state.level].length} questions, starting again. `
+              : '') + `Question ${state.number}. Never have I ever ${state.question}.`;
+        }
 
         function parse(text) {
           const clean = text.trim();
@@ -10631,13 +10891,12 @@
 
         function showSetup() {
           const n = state.players;
-          countEl.textContent = n ? String(n) : '?';
-          countEl.style.setProperty('--len', String(Math.max(2, countEl.textContent.length)));
-          caption.textContent = n
-            ? `players · ${LEVEL_NAMES[state.level]}`
-            : 'Choose how many are playing';
-          note.hidden = !n;
+          card.hidden = !n;
+          nextButton.hidden = !n;
           links.hidden = !n;
+          if (!n) return;
+          rule.textContent = `${n} players. If you have, put a finger down.`;
+          setupLine.textContent = `${n} players · ${LEVEL_NAMES[state.level]}`;
         }
 
         /* Opening fresh fills both popups with the current (or last) choices;
@@ -10718,12 +10977,23 @@
           const level = levelRadios.find((r) => r.checked)?.value;
           if (players === null || !level) return;
           levelDialog.close();
+          const newLevel = level !== state.level;
           state.players = state.lastPlayers = players;
           state.level = state.lastLevel = level;
           showSetup();
-          changeButton.focus();
-          announcer.textContent = `${players} players, ${LEVEL_NAMES[level]}. Questions are coming next.`;
+          if (newLevel) {
+            // A new level starts its own questions from 1.
+            state.bag = [];
+            state.number = 0;
+            ask();
+            announcer.textContent = `${players} players, ${LEVEL_NAMES[level]}. ${announcer.textContent}`;
+          } else {
+            announcer.textContent = `${players} players, ${LEVEL_NAMES[level]}.`;
+          }
+          nextButton.focus();
         });
+
+        nextButton.addEventListener('click', ask);
         changeButton.addEventListener('click', () => openPlayers('change'));
 
         registerScreen('never-have-i-ever', {
@@ -10733,6 +11003,9 @@
           enter(_param, fromNavigation) {
             state.players = null; // a new game: ask again (last choices are offered)
             state.level = null;
+            state.number = 0;
+            state.bag = [];
+            state.question = null;
             showSetup();
             announcer.textContent = '';
             if (fromNavigation) title.focus();
